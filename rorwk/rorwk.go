@@ -1,6 +1,7 @@
 package rorwk
 
 import (
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/binary"
 	"strings"
@@ -9,7 +10,11 @@ import (
 )
 
 // Hash64 is used to calculate hash for 64 bit.
-func Hash64(module, function string, key []byte) (uint64, []byte) {
+func Hash64(module, function string) ([]byte, []byte, error) {
+	key, err := generateKey()
+	if err != nil {
+		return nil, nil, err
+	}
 	const bits = 8
 	var (
 		seedHash     uint64
@@ -40,15 +45,17 @@ func Hash64(module, function string, key []byte) (uint64, []byte) {
 		functionHash += uint64(c)
 	}
 	apiHash := seedHash + keyHash + moduleHash + functionHash
-	return apiHash, hashKey
-}
-
-func ror64(value, bits uint64) uint64 {
-	return value>>bits | value<<(64-bits)
+	buf := make([]byte, 8)
+	binary.LittleEndian.PutUint64(buf, apiHash)
+	return buf, hashKey, nil
 }
 
 // Hash32 is used to calculate hash for 32 bit.
-func Hash32(module, function string, key []byte) (uint32, []byte) {
+func Hash32(module, function string) ([]byte, []byte, error) {
+	key, err := generateKey()
+	if err != nil {
+		return nil, nil, err
+	}
 	const bits = 4
 	var (
 		seedHash     uint32
@@ -79,26 +86,39 @@ func Hash32(module, function string, key []byte) (uint32, []byte) {
 		functionHash += uint32(c)
 	}
 	apiHash := seedHash + keyHash + moduleHash + functionHash
-	return apiHash, hashKey
+	buf := make([]byte, 4)
+	binary.LittleEndian.PutUint32(buf, apiHash)
+	return buf, hashKey, nil
+}
+
+// BytesToUintptr is used to convert hash or key bytes to uintptr.
+// It used to convert result to arguments for syscall.SyscallN.
+func BytesToUintptr(b []byte) uintptr {
+	var val uintptr
+	switch len(b) {
+	case 4:
+		val = uintptr(binary.LittleEndian.Uint32(b))
+	case 8:
+		val = uintptr(binary.LittleEndian.Uint64(b))
+	}
+	return val
+}
+
+func generateKey() ([]byte, error) {
+	key := make([]byte, 16)
+	_, err := rand.Read(key)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to generate random key")
+	}
+	return key, nil
+}
+
+func ror64(value, bits uint64) uint64 {
+	return value>>bits | value<<(64-bits)
 }
 
 func ror32(value, bits uint32) uint32 {
 	return value>>bits | value<<(32-bits)
-}
-
-// KeyToUintptr is used to convert key bytes to uintptr
-func KeyToUintptr(key []byte) (uintptr, error) {
-	n := len(key)
-	switch n {
-	case 4:
-		v := binary.LittleEndian.Uint32(key)
-		return uintptr(v), nil
-	case 8:
-		v := binary.LittleEndian.Uint64(key)
-		return uintptr(v), nil
-	default:
-		return 0, errors.Errorf("invalid key size: %d", n)
-	}
 }
 
 func toUnicode(s string) string {
