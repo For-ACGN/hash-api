@@ -16,6 +16,7 @@ import (
 func main() {
 	testFindAPI()
 	testAPICall()
+	fmt.Println("all tests passed!")
 }
 
 func testFindAPI() {
@@ -28,32 +29,22 @@ func testFindAPI() {
 	dst := unsafe.Slice((*byte)(unsafe.Pointer(scAddr)), size)
 	copy(dst, shellcode)
 
-	hashData, keyData, err := rorwk.Hash64("kernel32.dll", "ReadProcessMemory")
-	checkError(err)
-	hash := rorwk.BytesToUintptr(hashData)
-	key := rorwk.BytesToUintptr(keyData)
+	hash, key := calcHash("kernel32.dll", "ReadProcessMemory")
 	apiAddr, _, err := syscall.SyscallN(scAddr, hash, key)
 	fmt.Println(err)
-
 	proc := windows.NewLazySystemDLL("kernel32.dll").NewProc("ReadProcessMemory").Addr()
 	if proc != apiAddr {
 		log.Fatalf("expected address: 0x%016X, actual: 0x%016X\n", proc, apiAddr)
 	}
 
-	hashData, keyData, err = rorwk.Hash64("invalid.dll", "ReadProcessMemory")
-	checkError(err)
-	hash = rorwk.BytesToUintptr(hashData)
-	key = rorwk.BytesToUintptr(keyData)
+	hash, key = calcHash("invalid.dll", "ReadProcessMemory")
 	apiAddr, _, err = syscall.SyscallN(scAddr, hash, key)
 	fmt.Println(err)
 	if apiAddr != 0 {
 		log.Fatalln("unexpected return value:", apiAddr)
 	}
 
-	hashData, keyData, err = rorwk.Hash64("kernel32.dll", "Invalid")
-	checkError(err)
-	hash = rorwk.BytesToUintptr(hashData)
-	key = rorwk.BytesToUintptr(keyData)
+	hash, key = calcHash("kernel32.dll", "Invalid")
 	apiAddr, _, err = syscall.SyscallN(scAddr, hash, key)
 	fmt.Println(err)
 	if apiAddr != 0 {
@@ -71,10 +62,7 @@ func testAPICall() {
 	dst := unsafe.Slice((*byte)(unsafe.Pointer(scAddr)), size)
 	copy(dst, shellcode)
 
-	hashData, keyData, err := rorwk.Hash64("kernel32.dll", "CreateThread")
-	checkError(err)
-	hash := rorwk.BytesToUintptr(hashData)
-	key := rorwk.BytesToUintptr(keyData)
+	hash, key := calcHash("kernel32.dll", "CreateThread")
 	var threadID uint32
 	handle, _, err := syscall.SyscallN(
 		scAddr, hash, key,
@@ -105,6 +93,24 @@ func loadShellcode(name string) []byte {
 	}
 	checkError(err)
 	return shellcode
+}
+
+func calcHash(module, function string) (uintptr, uintptr) {
+	var (
+		hash []byte
+		key  []byte
+		err  error
+	)
+	switch runtime.GOARCH {
+	case "amd64":
+		hash, key, err = rorwk.Hash64(module, function)
+	case "386":
+		hash, key, err = rorwk.Hash32(module, function)
+	default:
+		log.Fatalln("unsupported architecture:", runtime.GOARCH)
+	}
+	checkError(err)
+	return rorwk.BytesToUintptr(hash), rorwk.BytesToUintptr(key)
 }
 
 func checkError(err error) {
