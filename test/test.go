@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"runtime"
 	"syscall"
 	"unsafe"
 
@@ -18,8 +19,7 @@ func main() {
 }
 
 func testFindAPI() {
-	shellcode, err := os.ReadFile("bin/x64/find_api.bin")
-	checkError(err)
+	shellcode := loadShellcode("find_api")
 	size := uintptr(len(shellcode))
 	mType := uint32(windows.MEM_COMMIT | windows.MEM_RESERVE)
 	mProtect := uint32(windows.PAGE_EXECUTE_READWRITE)
@@ -62,8 +62,7 @@ func testFindAPI() {
 }
 
 func testAPICall() {
-	shellcode, err := os.ReadFile("bin/x64/hash_api.bin")
-	checkError(err)
+	shellcode := loadShellcode("hash_api")
 	size := uintptr(len(shellcode))
 	mType := uint32(windows.MEM_COMMIT | windows.MEM_RESERVE)
 	mProtect := uint32(windows.PAGE_EXECUTE_READWRITE)
@@ -89,6 +88,23 @@ func testAPICall() {
 		log.Fatalln("failed to close thread handle:", err)
 	}
 	fmt.Println("thread id:", threadID)
+}
+
+func loadShellcode(name string) []byte {
+	var (
+		shellcode []byte
+		err       error
+	)
+	switch runtime.GOARCH {
+	case "amd64":
+		shellcode, err = os.ReadFile(fmt.Sprintf("bin/x64/%s.bin", name))
+	case "386":
+		shellcode, err = os.ReadFile(fmt.Sprintf("bin/x86/%s.bin", name))
+	default:
+		log.Fatalln("unsupported architecture:", runtime.GOARCH)
+	}
+	checkError(err)
+	return shellcode
 }
 
 func checkError(err error) {
