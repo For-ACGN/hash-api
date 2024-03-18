@@ -34,30 +34,64 @@ section .data
 find_api:
   ; store context
   push ebx                      ; store ebx
+  push ebp                      ; store ebp
   push esi                      ; store esi
 
   ; reserve stack for store arguments and variables
   sub esp, rsv_stack
 
   ; set arguments and variables
-  mov ecx, [esp+rsv_stack+3*4]  ; read hash from stack
+  mov ecx, [esp+rsv_stack+4*4]  ; read hash from stack
   mov [esp+arg_func_hash], ecx  ; store hash to stack
-  mov ecx, [esp+rsv_stack+4*4]  ; read hash key from stack
+  mov ecx, [esp+rsv_stack+5*4]  ; read hash key from stack
   mov [esp+arg_hash_key], ecx   ; store hash key to stack
   xor eax, eax                  ; clear eax for clean stack
-  mov [esp+var_seed_hash], eax  ; clean stack and store seed hash
-  mov [esp+var_key_hash], eax   ; clean stack and store key hash
-  mov [esp+var_mod_hash], eax   ; clean stack and store module name hash
-  mov [esp+var_func_hash], eax  ; clean stack and store function name hash
+  mov [esp+var_seed_hash], eax  ; clean stack for store seed hash
+  mov [esp+var_key_hash], eax   ; clean stack for store key hash
+  mov [esp+var_mod_hash], eax   ; clean stack for store module name hash
+  mov [esp+var_func_hash], eax  ; clean stack for store function name hash
+
+  ; for read arguments and variables on stack easily
+  mov ebp, esp
+
+  ; precompute hash
+  call calc_seed_hash           ; initialize seed hash
+  call calc_key_hash            ; initialize key hash
 
   ; test register
-  mov eax, [esp+arg_hash_key]
+  mov eax, edx
 
   ; restore stack for store arguments and variables
   add esp, rsv_stack
 
   ; restore context
   pop esi                       ; restore esi
+  pop ebp                       ; restore ebp
   pop ebx                       ; restore ebx
   ret                           ; return to the caller
 
+calc_seed_hash:
+  mov edx, [ebp+arg_hash_key]   ; initialize edx for store seed hash
+  lea esi, [ebp+arg_hash_key]   ; set address for load string byte
+  mov ecx, hash_key_size        ; set the loop times with hash key
+  read_hash_key_0:              ;
+  xor eax, eax                  ; clear eax
+  lodsb                         ; load one byte from hash key
+  ror edx, ror_seed             ; rotate right the hash value
+  add edx, eax                  ; add the next byte of hash key
+  loop read_hash_key_0          ; loop until read hash key finish
+  mov [ebp+var_seed_hash], edx  ; save seed hash to stack
+  ret                           ; return to the caller
+
+calc_key_hash:
+  mov edx, [ebp+var_seed_hash]  ; initialize edx for store key hash
+  lea esi, [ebp+arg_hash_key]   ; set address for load string byte
+  mov ecx, hash_key_size        ; set the loop times with hash key
+  read_hash_key_1:              ;
+  xor eax, eax                  ; clear eax
+  lodsb                         ; load one byte from hash key
+  ror edx, ror_key              ; rotate right the hash value
+  add edx, eax                  ; add the next byte of hash key
+  loop read_hash_key_1          ; loop until read hash key finish
+  mov [ebp+var_key_hash], edx   ; save key hash to stack
+  ret                           ; return to the caller
