@@ -30,6 +30,9 @@ func testFindAPI() {
 	copy(dst, shellcode)
 
 	hash, key := calcHash("kernel32.dll", "ReadProcessMemory")
+	fmt.Printf("hash: 0x%08X\n", hash)
+	fmt.Printf("key:  0x%08X\n", key)
+
 	apiAddr, _, err := syscall.SyscallN(scAddr, hash, key)
 	fmt.Println(err)
 	proc := windows.NewLazySystemDLL("kernel32.dll").NewProc("ReadProcessMemory").Addr()
