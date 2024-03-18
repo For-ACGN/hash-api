@@ -36,14 +36,15 @@ find_api:
   push ebx                      ; store ebx
   push ebp                      ; store ebp
   push esi                      ; store esi
+  push edi                      ; store edi
 
   ; reserve stack for store arguments and variables
   sub esp, rsv_stack
 
   ; set arguments and variables
-  mov ecx, [esp+rsv_stack+4*4]  ; read hash from stack
+  mov ecx, [esp+rsv_stack+5*4]  ; read hash from stack
   mov [esp+arg_func_hash], ecx  ; store hash to stack
-  mov ecx, [esp+rsv_stack+5*4]  ; read hash key from stack
+  mov ecx, [esp+rsv_stack+6*4]  ; read hash key from stack
   mov [esp+arg_hash_key], ecx   ; store hash key to stack
   xor eax, eax                  ; clear eax for clean stack
   mov [esp+var_seed_hash], eax  ; clean stack for store seed hash
@@ -58,13 +59,21 @@ find_api:
   call calc_seed_hash           ; initialize seed hash
   call calc_key_hash            ; initialize key hash
 
+  ; get the first module
+  mov ecx, 48                   ; set offset to ecx
+  mov ebx, [fs:ecx]             ; get a pointer to the PEB
+  mov ebx, [ebx+12]             ; get PEB->LDR
+  mov ebx, [ebx+20]             ; get the first module from the InMemoryOrder module list
+  call get_next_module          ; begin find module and function
+
   ; test register
-  mov eax, edx
+  mov eax, edi
 
   ; restore stack for store arguments and variables
   add esp, rsv_stack
 
   ; restore context
+  pop edi                       ; restore edi
   pop esi                       ; restore esi
   pop ebp                       ; restore ebp
   pop ebx                       ; restore ebx
@@ -94,4 +103,27 @@ calc_key_hash:
   add edx, eax                  ; add the next byte of hash key
   loop read_hash_key_1          ; loop until read hash key finish
   mov [ebp+var_key_hash], edx   ; save key hash to stack
+  ret                           ; return to the caller
+
+get_next_module:
+  mov edi, [ebp+var_seed_hash]  ; initialize edi for store module name hash
+  mov esi, [ebx+40]             ; get pointer to modules name (unicode string)
+  test esi, esi                 ; check esi is zero
+  jz not_found_func             ; if zero get nex module is finish, but not found
+  movzx ecx, word [ebx+38]      ; set ecx to the length we want to check
+
+  read_module_name:             ;
+  xor eax, eax                  ; clear eax
+  lodsb                         ; read in the next byte of the name
+  cmp al, 'a'                   ; some versions of Windows use lower case module names
+  jl uppercase_ok               ;
+  sub al, 0x20                  ; if so normalise to uppercase
+  uppercase_ok:                 ;
+  ror edi, ror_mod              ; rotate right our hash value
+  add edi, eax                  ; add the next byte of the name
+  loop read_module_name         ; loop until read module name finish
+  mov [ebp+var_mod_hash], edi   ; store module name hash to the stack
+
+  not_found_func:               ;
+  xor eax, eax                  ; clear the eax and it is the return value
   ret                           ; return to the caller
