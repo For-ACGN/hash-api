@@ -34,7 +34,7 @@ func testFindAPI() {
 	fmt.Println(err)
 	proc := windows.NewLazySystemDLL("kernel32.dll").NewProc("ReadProcessMemory").Addr()
 	if proc != apiAddr {
-		log.Fatalf("expected address: 0x%016X, actual: 0x%016X\n", proc, apiAddr)
+		log.Fatalf("expected address: 0x%08X, actual: 0x%08X\n", proc, apiAddr)
 	}
 
 	hash, key = calcHash("invalid.dll", "ReadProcessMemory")
