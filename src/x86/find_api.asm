@@ -21,6 +21,7 @@ section .data
   ror_mod  EQU ror_bit + 3
   ror_func EQU ror_bit + 4
 
+  rsv_stack     EQU (2+4)*4
   arg_func_hash EQU 0*4
   arg_hash_key  EQU 1*4
   var_seed_hash EQU 2*4
@@ -35,15 +36,28 @@ find_api:
   push ebx                      ; store ebx
   push esi                      ; store esi
 
+  ; reserve stack for store arguments and variables
+  sub esp, rsv_stack
+
   ; set arguments and variables
-  sub esp, (2+4)*4              ; reserve stack for store arguments
+  mov ecx, [esp+rsv_stack+3*4]  ; read hash from stack
+  mov [esp+arg_func_hash], ecx  ; store hash to stack
+  mov ecx, [esp+rsv_stack+4*4]  ; read hash key from stack
+  mov [esp+arg_hash_key], ecx   ; store hash key to stack
   xor eax, eax                  ; clear eax for clean stack
   mov [esp+var_seed_hash], eax  ; clean stack and store seed hash
   mov [esp+var_key_hash], eax   ; clean stack and store key hash
   mov [esp+var_mod_hash], eax   ; clean stack and store module name hash
   mov [esp+var_func_hash], eax  ; clean stack and store function name hash
 
-  add esp, (2+4)*4              ; restore stack for store arguments
-  pop esi                       ; restore ebx
-  pop ebx                       ; restore esi
+  ; test register
+  mov eax, [esp+arg_hash_key]
+
+  ; restore stack for store arguments and variables
+  add esp, rsv_stack
+
+  ; restore context
+  pop esi                       ; restore esi
+  pop ebx                       ; restore ebx
   ret                           ; return to the caller
+
