@@ -184,7 +184,7 @@ get_next_module:
   get_next_mod_2:               ;
   pop rbx                       ; restore our position in the module list
   mov rbx, [rbx]                ; get the next module
-  jmp get_next_module           ; process this module
+  jmp get_next_module           ; process the next module
 
   found_func:                   ;
   pop rax                       ; restore the current modules EAT
