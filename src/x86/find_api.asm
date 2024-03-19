@@ -124,6 +124,32 @@ get_next_module:
   loop read_module_name         ; loop until read module name finish
   mov [ebp+var_mod_hash], edi   ; store module name hash to the stack
 
+  ; proceed to iterate the export address table(EAT)
+  push ebx                      ; save the current position in the module list for later
+  mov ebx, [ebx+16]             ; get this modules base address
+  mov ecx, [ebx+60]             ; get PE header
+
+
+  ; use ecx as our EAT pointer here.
+  mov ecx, [ecx+ebx+120]        ; get the EAT from the PE header
+  test ecx, ecx                 ; test if no export address table is present
+  jz get_next_mod_0             ; if no EAT present, process the next module
+  add ecx, ebx                  ; add the modules base address
+  push ecx                      ; save the current modules EAT
+
+  mov edx, [ecx+32]             ; get the RVA of the function names
+  add edx, ebx                  ; add the modules base address
+  mov ecx, [ecx+24]             ; get the number of function names
+
+
+
+  get_next_mod_0:
+
+  ; use ecx as our EAT pointer here so we can take advantage of jecxz.
+
+  pop ecx
+  pop ecx
+
   not_found_func:               ;
   xor eax, eax                  ; clear the eax and it is the return value
   ret                           ; return to the caller
