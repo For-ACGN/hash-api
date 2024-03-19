@@ -13,21 +13,21 @@
 [BITS 32]
 
 section .data
-  hash_key_size EQU 0x04
+  hash_key_size EQU 0x04        ; the hash key byte slice length
 
-  ror_bit  EQU 0x000000004
-  ror_seed EQU ror_bit + 1
-  ror_key  EQU ror_bit + 2
-  ror_mod  EQU ror_bit + 3
-  ror_func EQU ror_bit + 4
+  ror_bit  EQU 0x000000004      ; the number of the base ror bit
+  ror_seed EQU ror_bit + 1      ; the number of the seed hash ror bit
+  ror_key  EQU ror_bit + 2      ; the number of the hash key ror bit
+  ror_mod  EQU ror_bit + 3      ; the number of the module name hash ror bit
+  ror_func EQU ror_bit + 4      ; the number of the function name hash ror bit
 
-  rsv_stack     EQU (2+4)*4
-  arg_func_hash EQU 0*4
-  arg_hash_key  EQU 1*4
-  var_seed_hash EQU 2*4
-  var_key_hash  EQU 3*4
-  var_mod_hash  EQU 4*4
-  var_func_hash EQU 5*4
+  rsv_stack     EQU (2+4)*4     ; reserve stack size for store arguments and variables
+  arg_func_hash EQU 0*4         ; the stack offset of the argument function hash
+  arg_hash_key  EQU 1*4         ; the stack offset of the argument hash key
+  var_seed_hash EQU 2*4         ; the stack offset of the variable seed hash
+  var_key_hash  EQU 3*4         ; the stack offset of the variable key hash
+  var_mod_hash  EQU 4*4         ; the stack offset of the variable module name hash
+  var_func_hash EQU 5*4         ; the stack offset of the variable function name hash
 
 ; [input]  hash and hash key must be pushed onto stack.
 ; [output] [eax = api function address].
