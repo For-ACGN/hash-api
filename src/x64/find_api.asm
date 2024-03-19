@@ -13,13 +13,13 @@
 [BITS 64]
 
 section .data
-  hash_key_size EQU 0x08
+  hash_key_size EQU 0x08        ; the hash key byte slice length
 
-  ror_bit  EQU 0x000000008
-  ror_seed EQU ror_bit + 1
-  ror_key  EQU ror_bit + 2
-  ror_mod  EQU ror_bit + 3
-  ror_func EQU ror_bit + 4
+  ror_bit  EQU 0x000000008      ; the number of the base ror bit
+  ror_seed EQU ror_bit + 1      ; the number of the seed hash ror bit
+  ror_key  EQU ror_bit + 2      ; the number of the hash key ror bit
+  ror_mod  EQU ror_bit + 3      ; the number of the module name hash ror bit
+  ror_func EQU ror_bit + 4      ; the number of the function name hash ror bit
 
 ; [input]  [rcx = hash], [rdx = hash key].
 ; [output] [rax = api function address].
