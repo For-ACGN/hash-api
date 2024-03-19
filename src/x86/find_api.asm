@@ -133,7 +133,7 @@ get_next_module:
   mov eax, [eax+120]            ; get the EAT from the PE header
   test eax, eax                 ; test if no export address table is present
   jz get_next_mod_2             ; if no EAT present, process the next module
-  add ecx, ebx                  ; add the modules base address
+  add eax, ebx                  ; add the modules base address
   push eax                      ; save the current modules EAT
   mov ecx, [eax+24]             ; get the number of function names
   mov edx, [eax+32]             ; get the RVA of the function names
@@ -153,25 +153,36 @@ get_next_func:                  ; computing the module hash + function hash
   add edi, eax                  ; add the next byte of the name
   cmp al, ah                    ; compare AL (the next byte from the name) to AH (null)
   jne read_func_name            ; if we have not reached the null terminator, continue
+  mov [ebp+var_func_hash], edi  ; store function name hash to the stack
 
+  ; calculate the finally hash
+  xor edi, edi                  ; clear edi for store the finally hash
+  add edi, [ebp+var_seed_hash]  ; add the seed hash to edi
+  add edi, [ebp+var_key_hash]   ; add the key hash to edi
+  add edi, [ebp+var_mod_hash]   ; add the current module hash to edi
+  add edi, [ebp+var_func_hash]  ; add the current function hash to edi
+  cmp edi, [ebp+arg_func_hash]  ; compare the hash to the one we are searching for
+  jnz get_next_func             ; go compute the next function hash if we have not found it
+  jmp found_func                ; if found, fix up stack, return the function address
 
-
-
-
-
-
-
-
-
-
-  get_next_mod_1:
-  pop eax
-  get_next_mod_2:
-  pop ebx
+  get_next_mod_1:               ;
+  pop eax                       ; pop off the current (now the previous) modules EAT
+  get_next_mod_2:               ;
+  pop ebx                       ; restore our position in the module list
   mov ebx, [ebx]                ; get the next module
-  ; jmp get_next_module           ; process this module
+  jmp get_next_module           ; process the next module
 
-
+  found_func:                   ;
+  pop eax                       ; restore the current modules EAT
+  mov edx, dword [eax+36]       ; get the ordinal table RVA
+  add edx, ebx                  ; add the modules base address
+  mov cx, [edx+2*ecx]           ; get the desired functions ordinal
+  mov edx, dword [eax+28]       ; get the function addresses table RVA
+  add edx, ebx                  ; add the modules base address
+  mov eax, dword [edx+4*ecx]    ; get the desired functions RVA
+  add eax, ebx                  ; add the modules base address to get the functions actual VA
+  pop edx                       ; clear off the current position in the module list
+  ret                           ; return to the caller
   not_found_func:               ;
   xor eax, eax                  ; clear the eax and it is the return value
   ret                           ; return to the caller
