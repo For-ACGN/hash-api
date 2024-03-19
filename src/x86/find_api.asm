@@ -127,28 +127,50 @@ get_next_module:
   ; proceed to iterate the export address table(EAT)
   push ebx                      ; save the current position in the module list for later
   mov ebx, [ebx+16]             ; get this modules base address
-  mov ecx, [ebx+60]             ; get PE header
+  mov eax, [ebx+60]             ; get PE header
+  add eax, ebx                  ; add the modules base address
 
-
-  ; use ecx as our EAT pointer here.
-  mov ecx, [ecx+ebx+120]        ; get the EAT from the PE header
-  test ecx, ecx                 ; test if no export address table is present
-  jz get_next_mod_0             ; if no EAT present, process the next module
+  mov eax, [eax+120]            ; get the EAT from the PE header
+  test eax, eax                 ; test if no export address table is present
+  jz get_next_mod_2             ; if no EAT present, process the next module
   add ecx, ebx                  ; add the modules base address
-  push ecx                      ; save the current modules EAT
-
-  mov edx, [ecx+32]             ; get the RVA of the function names
+  push eax                      ; save the current modules EAT
+  mov ecx, [eax+24]             ; get the number of function names
+  mov edx, [eax+32]             ; get the RVA of the function names
   add edx, ebx                  ; add the modules base address
-  mov ecx, [ecx+24]             ; get the number of function names
+
+get_next_func:                  ; computing the module hash + function hash
+  jecxz get_next_mod_1          ; when we reach the start of the EAT, process the next module
+  dec ecx                       ; decrement the function name counter
+  mov esi, dword [edx+ecx*4]    ; get RVA of next module name
+  add esi, ebx                  ; add the modules base address
+  mov edi, [ebp+var_seed_hash]  ; initialize edi for store function name hash
+
+  read_func_name:               ; and compare it to the one we want
+  xor eax, eax                  ; clear eax
+  lodsb                         ; read in the next byte of the ASCII function name
+  ror edi, ror_func             ; rotate right our hash value
+  add edi, eax                  ; add the next byte of the name
+  cmp al, ah                    ; compare AL (the next byte from the name) to AH (null)
+  jne read_func_name            ; if we have not reached the null terminator, continue
 
 
 
-  get_next_mod_0:
 
-  ; use ecx as our EAT pointer here so we can take advantage of jecxz.
 
-  pop ecx
-  pop ecx
+
+
+
+
+
+
+  get_next_mod_1:
+  pop eax
+  get_next_mod_2:
+  pop ebx
+  mov ebx, [ebx]                ; get the next module
+  ; jmp get_next_module           ; process this module
+
 
   not_found_func:               ;
   xor eax, eax                  ; clear the eax and it is the return value
