@@ -66,9 +66,6 @@ find_api:
   mov ebx, [ebx+20]             ; get the first module from the InMemoryOrder module list
   call get_next_module          ; begin find module and function
 
-  ; test register
-  mov eax, edi
-
   ; restore stack for store arguments and variables
   add esp, rsv_stack
 
