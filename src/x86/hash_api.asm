@@ -32,6 +32,7 @@ section .data
 ; [input]  hash and hash key must be pushed onto stack first, then other stack params.
 ; [output] [eax = api function address].
 api_call:
+  ; try to find api address
   mov ecx, [esp+4]              ; copy hash data from stack
   mov edx, [esp+8]              ; copy hash key from stack
   push edx                      ; push hash key
@@ -42,7 +43,17 @@ api_call:
   ; check is find api function address
   test eax, eax                 ; check eax is zero
   jz not_found_api              ;
-
+  ; store return address and adjust stack
+  ; reuse stack that store argument hash, hash key
+  mov [esp+4], esi              ; store esi to the stack
+  pop esi                       ; store return address
+  ; call the api function
+  add esp, 2*4                  ; adjust stack for skip two arguments
+  call eax                      ; call the api address
+  sub esp, 2*4                  ; restore stack
+  ; restore stack and return address
+  push esi                      ; restore return address
+  mov esi, [esp+4]              ; restore esi from the stack
   not_found_api:                ;
   ret                           ; return to the caller
 
