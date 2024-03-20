@@ -29,6 +29,23 @@ section .data
   var_mod_hash  EQU 4*4         ; the stack offset of the variable module name hash
   var_func_hash EQU 5*4         ; the stack offset of the variable function name hash
 
+; [input]  hash and hash key must be pushed onto stack first, then other stack params.
+; [output] [eax = api function address].
+api_call:
+  mov ecx, [esp+4]              ; copy hash data from stack
+  mov edx, [esp+8]              ; copy hash key from stack
+  push edx                      ; push hash key
+  push ecx                      ; push hash data
+  call find_api                 ; call find api function
+  add esp, 2*4                  ; restore stack
+
+  ; check is find api function address
+  test eax, eax                 ; check eax is zero
+  jz not_found_api              ;
+
+  not_found_api:                ;
+  ret                           ; return to the caller
+
 ; [input]  hash and hash key must be pushed onto stack.
 ; [output] [eax = api function address].
 find_api:
