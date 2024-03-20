@@ -36,6 +36,7 @@ api_call:
   test rax, rax                 ; check rax is zero
   jz not_found_api              ;
   ; store return address and adjust stack
+  ; reuse stack that store argument r8, r9
   mov [rsp+8], rsi              ; store rsi to the stack
   pop rsi                       ; store return address
   ; move arguments about function
