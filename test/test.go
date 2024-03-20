@@ -66,6 +66,8 @@ func testAPICall() {
 	copy(dst, shellcode)
 
 	hash, key := calcHash("kernel32.dll", "CreateThread")
+	fmt.Printf("hash: 0x%08X\n", hash)
+	fmt.Printf("key:  0x%08X\n", key)
 	var threadID uint32
 	handle, _, err := syscall.SyscallN(
 		scAddr, hash, key,
@@ -73,6 +75,7 @@ func testAPICall() {
 		uintptr(unsafe.Pointer(&threadID)),
 	)
 	fmt.Println(err)
+	fmt.Printf("handle: 0x%08X\n", handle)
 
 	err = windows.CloseHandle(windows.Handle(handle))
 	if err != nil {
