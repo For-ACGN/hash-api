@@ -48,7 +48,7 @@ func apiCall() {
 	bufLen := uintptr(len(buf))
 	numRead := uintptr(unsafe.Pointer(&read))
 
-	apiCallAddr := loadShellcode("hash_api")
+	apiCallAddr := loadShellcode("api_call")
 	var (
 		hash uint64 // "uintptr" for pass go build
 		key  uint64 // "uintptr" for pass go build
