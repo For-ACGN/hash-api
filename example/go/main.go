@@ -17,9 +17,10 @@ func main() {
 }
 
 func findAPI() {
+	findAPIAddr := loadShellcode("find_api")
 	var (
-		hash uintptr
-		key  uintptr
+		hash uint64 // "uintptr" for pass go build
+		key  uint64 // "uintptr" for pass go build
 	)
 	switch runtime.GOARCH {
 	case "amd64":
@@ -31,14 +32,47 @@ func findAPI() {
 	default:
 		log.Fatalln("unsupported architecture:", runtime.GOARCH)
 	}
-	findAPIAddr := loadShellcode("find_api")
-	apiAddr, _, err := syscall.SyscallN(findAPIAddr, hash, key)
+	apiAddr, _, err := syscall.SyscallN(findAPIAddr, uintptr(hash), uintptr(key))
 	fmt.Println(err)
 	fmt.Printf("ReadProcessMemory: 0x%08X\n", apiAddr)
 }
 
 func apiCall() {
+	testdata := []byte{0x11, 0x22, 0x33, 0x44}
+	buf := make([]byte, 4)
+	read := uint32(0)
 
+	hProcess := uintptr(windows.CurrentProcess())
+	address := uintptr(unsafe.Pointer(&testdata[0]))
+	bufAddr := uintptr(unsafe.Pointer(&buf[0]))
+	bufLen := uintptr(len(buf))
+	numRead := uintptr(unsafe.Pointer(&read))
+
+	apiCallAddr := loadShellcode("hash_api")
+	var (
+		hash uint64 // "uintptr" for pass go build
+		key  uint64 // "uintptr" for pass go build
+	)
+	switch runtime.GOARCH {
+	case "amd64":
+		hash = 0x19F0408D11729CE1
+		key = 0x770BAC188977E15D
+	case "386":
+		hash = 0x57FA7605
+		key = 0xA2DDED61
+	default:
+		log.Fatalln("unsupported architecture:", runtime.GOARCH)
+	}
+	ret, _, err := syscall.SyscallN(
+		apiCallAddr, uintptr(hash), uintptr(key),
+		hProcess, address, bufAddr, bufLen, numRead,
+	)
+	fmt.Println(err)
+	if ret == 0 {
+		log.Fatalln("failed to read process memory")
+	}
+	fmt.Println(buf)
+	fmt.Println(read)
 }
 
 func loadShellcode(name string) uintptr {
