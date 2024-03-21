@@ -5,7 +5,7 @@
 ; changed:   rax, rcx, rdx, r8, r9, r10, r11.
 ; unchanged: rbx, rbp, rsi, rdi, rsp, r12, r13, r14, r15.
 ;
-; nasm -f bin -O3 hash_api.asm -o hash_api.bin
+; nasm -f bin -O3 api_call.asm -o api_call.bin
 ;
 ; these functions assumes the direction flag has already been cleared via a CLD instruction.
 ; these functions are unable to call forwarded exports.
