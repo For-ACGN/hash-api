@@ -61,24 +61,24 @@ func TestHash32(t *testing.T) {
 	})
 }
 
-func TestBytesToUintptr(t *testing.T) {
+func TestBytesToUint64(t *testing.T) {
 	key := []byte{0x00}
 	key = append(key, bytes.Repeat([]byte{0x11}, 6)...)
 	key = append(key, 0x33)
-	val := BytesToUintptr(key)
-	require.Equal(t, uintptr(0x3311111111111100), val)
+	val := BytesToUint64(key)
+	require.Equal(t, uint64(0x3311111111111100), val)
 
 	key = []byte{0x00}
 	key = append(key, bytes.Repeat([]byte{0x11}, 2)...)
 	key = append(key, 0x33)
-	val = BytesToUintptr(key)
-	require.Equal(t, uintptr(0x33111100), val)
+	val = BytesToUint64(key)
+	require.Equal(t, uint64(0x33111100), val)
 
-	val = BytesToUintptr(bytes.Repeat([]byte{0x11}, 3))
+	val = BytesToUint64(bytes.Repeat([]byte{0x11}, 3))
 	require.Zero(t, val)
-	val = BytesToUintptr(bytes.Repeat([]byte{0x11}, 9))
+	val = BytesToUint64(bytes.Repeat([]byte{0x11}, 9))
 	require.Zero(t, val)
 
-	val = BytesToUintptr(nil)
+	val = BytesToUint64(nil)
 	require.Zero(t, val)
 }

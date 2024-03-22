@@ -91,15 +91,15 @@ func Hash32(module, function string) ([]byte, []byte, error) {
 	return buf, hashKey, nil
 }
 
-// BytesToUintptr is used to convert hash or key bytes to uintptr.
+// BytesToUint64 is used to convert hash or key bytes to uint64.
 // It used to convert result to arguments for syscall.SyscallN.
-func BytesToUintptr(b []byte) uintptr {
-	var val uintptr
+func BytesToUint64(b []byte) uint64 {
+	var val uint64
 	switch len(b) {
 	case 4:
-		val = uintptr(binary.LittleEndian.Uint32(b))
+		val = uint64(binary.LittleEndian.Uint32(b))
 	case 8:
-		val = uintptr(binary.LittleEndian.Uint64(b))
+		val = binary.LittleEndian.Uint64(b)
 	}
 	return val
 }
