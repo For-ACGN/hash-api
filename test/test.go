@@ -107,7 +107,9 @@ func calcHash(module, function string) (uintptr, uintptr) {
 		log.Fatalln("unsupported architecture:", runtime.GOARCH)
 	}
 	checkError(err)
-	return rorwk.BytesToUintptr(hash), rorwk.BytesToUintptr(key)
+	h := uintptr(rorwk.BytesToUint64(hash))
+	k := uintptr(rorwk.BytesToUint64(key))
+	return h, k
 }
 
 func checkError(err error) {
