@@ -47,8 +47,8 @@ func main() {
 	if err != nil {
 		log.Fatalln("failed to calculate hash:", err)
 	}
-	fmt.Printf("Hash: 0x%0"+numZero+"X\n", rorwk.BytesToUintptr(apiHash))
-	fmt.Printf("Key:  0x%0"+numZero+"X\n", rorwk.BytesToUintptr(hashKey))
+	fmt.Printf("Hash: 0x%0"+numZero+"X\n", rorwk.BytesToUint64(apiHash))
+	fmt.Printf("Key:  0x%0"+numZero+"X\n", rorwk.BytesToUint64(hashKey))
 	fmt.Printf("Hash: %s\n", dumpBytesHex(apiHash))
 	fmt.Printf("Key:  %s\n", dumpBytesHex(hashKey))
 }
