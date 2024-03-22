@@ -22,3 +22,6 @@ go.work
 
 # GoLand
 .idea
+
+# Linux binary
+bin/*/hash
