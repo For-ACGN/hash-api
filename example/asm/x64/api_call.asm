@@ -4,12 +4,6 @@
 entry:
   ; store context
   push rbx                      ; store rbx
-  push rdi                      ; store rdi
-
-  ; ensure stack is 16 bytes aligned
-  mov rdi, rsp                  ; store current to rdi
-  and rdi, 0xF                  ; calculate the offset
-  sub rsp, rdi                  ; adjust current stack
 
   ; calculate entry address
   call calc_entry_addr          ; calculate the entry address
@@ -17,6 +11,12 @@ entry:
 
   ; clear the direction flag
   cld
+
+  ; ensure stack is 16 bytes aligned
+  push rdi                      ; store rdi
+  mov rdi, rsp                  ; store current to rdi
+  and rdi, 0xF                  ; calculate the offset
+  sub rsp, rdi                  ; adjust current stack
 
   ; call "kernel32.dll, CreateThread"
   sub rsp, 32+4*8               ; reserve stack for arguments
@@ -27,7 +27,7 @@ entry:
   lea r10, [rbx+API_WinExec]    ; calculate function address
   mov [rsp+32+0*8], r10         ; lpStartAddress
   mov qword [rsp+32+1*8], rbx   ; lpParameter, set entry address
-  mov qword [rsp+32+2*8], 0     ; dwCreationFlags CREATE_SUSPENDED
+  mov qword [rsp+32+2*8], 0     ; dwCreationFlags
   mov qword [rsp+32+3*8], 0     ; lpThreadId
   call api_call                 ; call api function
   add rsp, 32+4*8               ; restore stack for arguments
@@ -42,9 +42,9 @@ entry:
 
   ; restore aligned stack
   add rsp, rdi                  ; restore stack from rdi
+  pop rdi                       ; restore rdi
 
   ; restore context
-  pop rdi                       ; restore rdi
   pop rbx                       ; restore rbx
   ret                           ; return to the caller
 
@@ -63,6 +63,12 @@ API_WinExec:
   push rbx                      ; store rbx
   mov rbx, rcx                  ; read entry address from rcx
 
+  ; ensure stack is 16 bytes aligned
+  push rdi                      ; store rdi
+  mov rdi, rsp                  ; store current to rdi
+  and rdi, 0xF                  ; calculate the offset
+  sub rsp, rdi                  ; adjust current stack
+
   mov rcx, 0xCA2DBA870B222A04   ; set function hash
   mov rdx, 0xB725F01C80CE0985   ; set hash key
   xor r9, r9                    ; clear r9
@@ -72,8 +78,12 @@ API_WinExec:
   call api_call                 ; call api function
   add rsp, 32                   ; restore stack
 
+  ; restore aligned stack
+  add rsp, rdi                  ; restore stack from rdi
+  pop rdi                       ; restore rdi
+
   pop rbx                       ; restore rbx
-  ret                           ; return to caller
+  ret                           ; exit thread
 
 command:
   db "calc.exe", 0
