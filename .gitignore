@@ -25,3 +25,6 @@ go.work
 
 # Linux binary
 bin/*/hash
+
+# shellcode in example
+example/asm/*/*.bin
