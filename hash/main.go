@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"runtime"
 	"strings"
 
 	"github.com/For-ACGN/hash-api/rorwk"
@@ -17,7 +18,14 @@ var (
 )
 
 func init() {
-	flag.StringVar(&format, "fmt", "64", "binary format: 32 or 64")
+	var defaultFormat string
+	switch runtime.GOARCH {
+	case "386":
+		defaultFormat = "32"
+	case "amd64":
+		defaultFormat = "64"
+	}
+	flag.StringVar(&format, "fmt", defaultFormat, "binary format: 32 or 64")
 	flag.StringVar(&dllName, "mod", "kernel32.dll", "module name")
 	flag.StringVar(&funcName, "func", "WinExec", "function name")
 	flag.Parse()
