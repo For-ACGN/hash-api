@@ -38,6 +38,9 @@ func main() {
 	ret, _, err := syscall.SyscallN(scAddr)
 	fmt.Println(err)
 	fmt.Println("return value:", ret)
+
+	// exit and set exit code
+	os.Exit(int(ret))
 }
 
 func checkError(err error) {
