@@ -42,17 +42,17 @@ find_api:
   sub esp, rsv_stack
 
   ; set arguments and variables
-  mov ecx, [esp+rsv_stack+5*4]  ; read hash from stack
-  mov [esp+arg_func_hash], ecx  ; store hash to stack
-  mov ecx, [esp+rsv_stack+6*4]  ; read hash key from stack
-  mov [esp+arg_hash_key], ecx   ; store hash key to stack
   xor eax, eax                  ; clear eax for clean stack
+  mov ecx, [esp+rsv_stack+5*4]  ; read hash from stack
+  mov edx, [esp+rsv_stack+6*4]  ; read hash key from stack
+  mov [esp+arg_func_hash], ecx  ; store hash to stack
+  mov [esp+arg_hash_key], edx   ; store hash key to stack
   mov [esp+var_seed_hash], eax  ; clean stack for store seed hash
   mov [esp+var_key_hash], eax   ; clean stack for store key hash
   mov [esp+var_mod_hash], eax   ; clean stack for store module name hash
   mov [esp+var_func_hash], eax  ; clean stack for store function name hash
 
-  ; for read arguments and variables on stack easily
+  ; for read arguments and variables easily in function
   mov ebp, esp
 
   ; precompute hash
@@ -74,7 +74,7 @@ find_api:
   pop esi                       ; restore esi
   pop ebp                       ; restore ebp
   pop ebx                       ; restore ebx
-  ret                           ; return to the caller
+  ret 2*4                       ; return to the caller
 
 calc_seed_hash:
   mov edx, [ebp+arg_hash_key]   ; initialize edx for store seed hash
