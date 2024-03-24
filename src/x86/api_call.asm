@@ -29,8 +29,10 @@ section .data
   var_mod_hash  EQU 4*4         ; the stack offset of the variable module name hash
   var_func_hash EQU 5*4         ; the stack offset of the variable function name hash
 
-; [input]  hash and hash key must be pushed onto stack first, then other stack params.
-; [output] [eax = api function address].
+; [input]  hash and hash key must be pushed onto stack first,
+;          then push API parameters to the stack.
+; [output] [eax = the return value from the API call].
+;          [ecx = 0(not found, caller must remember pop API parameters)].
 api_call:
   ; try to find api address
   mov ecx, [esp+4]              ; copy hash data from stack
@@ -38,7 +40,6 @@ api_call:
   push edx                      ; push hash key
   push ecx                      ; push hash data
   call find_api                 ; call find api function
-  add esp, 2*4                  ; restore stack
 
   ; check is find api function address
   test eax, eax                 ; check eax is zero
@@ -55,7 +56,7 @@ api_call:
   push esi                      ; restore return address
   mov esi, [esp+4]              ; restore esi from the stack
   not_found_api:                ;
-  ret                           ; return to the caller
+  ret 2*4                       ; return to the caller
 
 ; [input]  hash and hash key must be pushed onto stack.
 ; [output] [eax = api function address].
@@ -70,17 +71,17 @@ find_api:
   sub esp, rsv_stack
 
   ; set arguments and variables
-  mov ecx, [esp+rsv_stack+5*4]  ; read hash from stack
-  mov [esp+arg_func_hash], ecx  ; store hash to stack
-  mov ecx, [esp+rsv_stack+6*4]  ; read hash key from stack
-  mov [esp+arg_hash_key], ecx   ; store hash key to stack
   xor eax, eax                  ; clear eax for clean stack
+  mov ecx, [esp+rsv_stack+5*4]  ; read hash from stack
+  mov edx, [esp+rsv_stack+6*4]  ; read hash key from stack
+  mov [esp+arg_func_hash], ecx  ; store hash to stack
+  mov [esp+arg_hash_key], edx   ; store hash key to stack
   mov [esp+var_seed_hash], eax  ; clean stack for store seed hash
   mov [esp+var_key_hash], eax   ; clean stack for store key hash
   mov [esp+var_mod_hash], eax   ; clean stack for store module name hash
   mov [esp+var_func_hash], eax  ; clean stack for store function name hash
 
-  ; for read arguments and variables on stack easily
+  ; for read arguments and variables easily in function
   mov ebp, esp
 
   ; precompute hash
@@ -102,7 +103,7 @@ find_api:
   pop esi                       ; restore esi
   pop ebp                       ; restore ebp
   pop ebx                       ; restore ebx
-  ret                           ; return to the caller
+  ret 2*4                       ; return to the caller
 
 calc_seed_hash:
   mov edx, [ebp+arg_hash_key]   ; initialize edx for store seed hash
