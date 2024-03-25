@@ -63,6 +63,9 @@ API_WinExec:
   push rbx                      ; store rbx
   mov rbx, rcx                  ; read entry address from rcx
 
+  ; clear the direction flag
+  cld
+
   ; ensure stack is 16 bytes aligned
   push rdi                      ; store rdi
   mov rdi, rsp                  ; store current to rdi
