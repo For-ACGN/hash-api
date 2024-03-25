@@ -3,7 +3,7 @@
 ; Windows stdcall calling convention:
 ; https://learn.microsoft.com/en-us/cpp/cpp/stdcall
 ; changed:   eax, ecx, edx.
-; unchanged: ebx, ebp, esi, edi, esp.
+; unchanged: ebx, esi, edi, ebp, esp.
 ;
 ; nasm -f bin -O3 find_api.asm -o find_api.bin
 ;

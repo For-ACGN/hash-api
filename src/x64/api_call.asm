@@ -3,7 +3,7 @@
 ; Windows x64 calling convention:
 ; https://learn.microsoft.com/en-us/cpp/build/x64-calling-convention
 ; changed:   rax, rcx, rdx, r8, r9, r10, r11.
-; unchanged: rbx, rbp, rsi, rdi, rsp, r12, r13, r14, r15.
+; unchanged: rbx, rsi, rdi, rbp, rsp, r12, r13, r14, r15.
 ;
 ; nasm -f bin -O3 api_call.asm -o api_call.bin
 ;
