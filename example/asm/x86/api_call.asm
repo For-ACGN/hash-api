@@ -31,6 +31,7 @@ entry:
   call api_call                 ; call api function
 
   ; call "kernel32.dll, WaitForSingleObject"
+  push 1000                     ; set dwMilliseconds
   push eax                      ; set thread handle
   push 0x0F929559               ; set hash key
   push 0x2811A50E               ; set function hash

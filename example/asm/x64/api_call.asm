@@ -36,6 +36,7 @@ entry:
   mov rcx, 0x79A2580C6E2937E5   ; set function hash
   mov rdx, 0xA280D0DCE28F4296   ; set hash key
   mov r8, rax                   ; set thread handle
+  mov r9, 1000                  ; set dwMilliseconds
   sub rsp, 32                   ; reserve stack
   call api_call                 ; call api function
   add rsp, 32                   ; restore stack
