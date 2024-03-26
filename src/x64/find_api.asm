@@ -1,14 +1,21 @@
 ; [original author: Stephen Fewer]
 ;
-; Windows x64 calling convention:
-; https://learn.microsoft.com/en-us/cpp/build/x64-calling-convention
-; changed:   rax, rcx, rdx, r8, r9, r10, r11.
-; unchanged: rbx, rsi, rdi, rbp, rsp, r12, r13, r14, r15.
+; x64 calling convention:
+;   https://learn.microsoft.com/en-us/cpp/build/x64-calling-convention
 ;
-; nasm -f bin -O3 find_api.asm -o find_api.bin
+; x64 software conventions:
+;   https://learn.microsoft.com/en-us/cpp/build/x64-software-conventions#x64-register-usage
 ;
-; these functions assumes the direction flag has already been cleared via a CLD instruction.
-; these functions are unable to call forwarded exports.
+; register:
+;   changed:   rax, rcx, rdx, r8, r9, r10, r11.
+;   unchanged: rdi, rsi, rbx, rbp, rsp, r12, r13, r14, r15.
+;
+; build:
+;   nasm -f bin -O3 api_call.asm -o api_call.bin
+;
+; note:
+;   these functions assumes the direction flag has already been cleared via a CLD instruction.
+;   these functions are unable to call forwarded exports.
 
 [BITS 64]
 
