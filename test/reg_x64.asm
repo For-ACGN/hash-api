@@ -15,9 +15,9 @@
 ;
 
 %macro Test_Prologue 0
-  push rbx
-  push rsi
   push rdi
+  push rsi
+  push rbx
   push rbp
   push r12
   push r13
@@ -28,7 +28,7 @@
 %macro Test_Epilogue 0
   xor rcx, rcx
 
-  cmp rbx, [rsp+7*8]
+  cmp rdi, [rsp+7*8]
   je equal_1
   add rcx, 0x10000000
   jmp end_equal_1
@@ -44,7 +44,7 @@
   add rcx, 0x02000000
   end_equal_2:
 
-  cmp rdi, [rsp+5*8]
+  cmp rbx, [rsp+5*8]
   je equal_3
   add rcx, 0x00100000
   jmp end_equal_3
