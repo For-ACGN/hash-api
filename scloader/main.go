@@ -37,7 +37,7 @@ func main() {
 	// call shellcode entry
 	ret, _, err := syscall.SyscallN(scAddr)
 	fmt.Println(err)
-	fmt.Println("return value:", ret)
+	fmt.Printf("return value: 0x%X %d\n", ret, ret)
 
 	// exit and set exit code
 	os.Exit(int(ret))
