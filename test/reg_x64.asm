@@ -30,66 +30,66 @@
 
   cmp rbx, [rsp+7*8]
   je equal_1
-  add rcx, 0x00000001
+  add rcx, 0x10000000
   jmp end_equal_1
   equal_1:
-  add rcx, 0x00000002
+  add rcx, 0x20000000
   end_equal_1:
 
   cmp rsi, [rsp+6*8]
   je equal_2
-  add rcx, 0x00000010
+  add rcx, 0x01000000
   jmp end_equal_2
   equal_2:
-  add rcx, 0x00000020
+  add rcx, 0x02000000
   end_equal_2:
 
   cmp rdi, [rsp+5*8]
   je equal_3
-  add rcx, 0x00000100
+  add rcx, 0x00100000
   jmp end_equal_3
   equal_3:
-  add rcx, 0x00000200
+  add rcx, 0x00200000
   end_equal_3:
 
   cmp rbp, [rsp+4*8]
   je equal_4
-  add rcx, 0x00001000
+  add rcx, 0x00010000
   jmp end_equal_4
   equal_4:
-  add rcx, 0x00002000
+  add rcx, 0x00020000
   end_equal_4:
 
   cmp r12, [rsp+3*8]
   je equal_5
-  add rcx, 0x00010000
+  add rcx, 0x00001000
   jmp end_equal_5
   equal_5:
-  add rcx, 0x00020000
+  add rcx, 0x00002000
   end_equal_5:
 
   cmp r13, [rsp+2*8]
   je equal_6
-  add rcx, 0x00100000
+  add rcx, 0x00000100
   jmp end_equal_6
   equal_6:
-  add rcx, 0x00200000
+  add rcx, 0x00000200
   end_equal_6:
 
   cmp r14, [rsp+1*8]
   je equal_7
-  add rcx, 0x01000000
+  add rcx, 0x00000010
   jmp end_equal_7
   equal_7:
-  add rcx, 0x02000000
+  add rcx, 0x00000020
   end_equal_7:
 
   cmp r15, [rsp+0*8]
   je equal_8
-  add rcx, 0x10000000
+  add rcx, 0x00000001
   jmp end_equal_8
   equal_8:
-  add rcx, 0x20000000
+  add rcx, 0x00000002
   end_equal_8:
 
   add rsp, 8*8
