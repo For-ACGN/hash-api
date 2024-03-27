@@ -1,6 +1,19 @@
 ; If all registers are not changed, eax is   0x2222.
 ; If some registers are changed, eax is like 0x2212.
 
+; Example:
+;
+; %include "../../../test/reg_x86.asm"
+;
+; entry:
+;  Test_Prologue
+;  push ebx
+;  shellcode
+;  pop ebx
+;  Test_Epilogue
+;  ret
+;
+
 %macro Test_Prologue 0
   push edi
   push esi
