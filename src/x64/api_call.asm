@@ -28,8 +28,8 @@ section .data
   ror_mod  EQU ror_bit + 3      ; the number of the module name hash ror bit
   ror_func EQU ror_bit + 4      ; the number of the function name hash ror bit
 
-; [input]  [rcx = hash], [rdx = hash key].
-; api args [r8 = (rcx)], [r9 = (rdx)], stack: r8, r9 and any stack params).
+; [input]  [rcx = hash], [rdx = hash key], [r8 = num api args]
+; api args [r9 = (rcx)], stack: rdx, r8, r9 and any stack params).
 ; [output] [rax = the return value from the API call].
 api_call:
   ; try to find api address
@@ -42,22 +42,27 @@ api_call:
   ; check is find api function address
   test rax, rax                 ; check rax is zero
   jz not_found_api              ;
-  ; store return address and adjust stack
-  ; reuse stack that store argument r8, r9
-  mov [rsp+8], rsi              ; store rsi to the stack
-  pop rsi                       ; store return address
-  ; move arguments about function
-  mov rcx, r8                   ; set rcx from r8
-  mov rdx, r9                   ; set rdx from r9
-  mov r8, [rsp+32+0]            ; set r8 from stack
-  mov r9, [rsp+32+8]            ; set r9 from stack
-  ; call the api function
-  add rsp, 32-2*8               ; adjust stack for skip two arguments
-  call rax                      ; call the api address
-  sub rsp, 32-2*8               ; restore stack
-  ; restore stack and return address
-  push rsi                      ; restore return address
-  mov rsi, [rsp+8]              ; restore rsi from the stack
+  push rbp                      ; store rbp
+  mov rbp, rsp                  ; create new stack frame
+  ; move arguments about api
+  mov rcx, r9                   ; set rcx from r8
+  mov rdx, [rbp+32+8+0*8]       ; set rdx from stack
+  mov r8, [rbp+32+8+1*8]        ; set r8 from stack
+  mov r9, [rbp+32+8+2*8]        ; set r9 from stack
+  ; calculate new stack
+  sub rsp, 8                    ; reserve stack for store new stack size
+  imul r8, 8                    ; calculate new stack size
+  mov [rbp-8], r8               ; store new stack size
+  sub rsp, r8                   ; reserve stack
+  ; copy arguments to new stack
+
+  ; call rax                      ; call the api address
+
+  ; restore stack that store arguments
+  mov r8, [rbp-8]               ; read new stack size
+  add rsp, r8                   ; restore stack
+  add rsp, 8                    ; restore stack for store new stack size
+  pop rbp                       ; restore rbp
   not_found_api:                ;
   ret                           ; return to the caller
 
