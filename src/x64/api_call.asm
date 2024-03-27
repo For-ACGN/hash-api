@@ -38,7 +38,6 @@ api_call:
   call find_api                 ; call find api function
   pop r9                        ; restore rcx
   pop r8                        ; restore rdx
-
   ; check is find api function address
   test rax, rax                 ; check rax is zero
   jz not_found_api              ;
@@ -46,33 +45,37 @@ api_call:
   push rdi                      ; store rdi
   push rsi                      ; store rsi
   mov rbp, rsp                  ; create new stack frame
-  ; calculate new stack
-  sub rsp, 8                    ; reserve stack for store new stack size
+  ; calculate new stack size that need alloc
+  sub rsp, 2*8                  ; reserve stack for store variables
   imul r8, 8                    ; calculate new stack size
-  mov [rbp-8], r8               ; store new stack size
+  mov [rbp-2*8+0*8], r8         ; store new stack size
   sub rsp, r8                   ; reserve stack
-  ; copy arguments to new stack
-
-  mov rsi, rbp
-  add rsi, 8*8
-  mov rdi, rsp
-  mov rcx, r8
-  rep movsb
-
+  ; ensure stack is 16 bytes aligned
+  mov r8, rsp                   ; store current stack to r8
+  and r8, 0xF                   ; calculate the offset
+  mov [rbp-2*8+1*8], r8         ; store offset to stack
+  sub rsp, r8                   ; adjust current stack
+  ; copy arguments to the new stack
+  mov rsi, rbp                  ; set source address
+  add rsi, 8*8                  ; add offset to target address
+  mov rdi, rsp                  ; set destination address
+  mov rcx, r8                   ; set num bytes
+  rep movsb                     ; copy parameters on stack
   ; move arguments about api
-  mov rcx, r9                   ; set rcx from r8
+  mov rcx, r9                   ; set rcx from r9
   mov rdx, [rbp+64+0*8]         ; set rdx from stack
   mov r8, [rbp+64+1*8]          ; set r8 from stack
   mov r9, [rbp+64+2*8]          ; set r9 from stack
-
-  sub rsp, 32
+  ; call api function
+  sub rsp, 32                   ; reserve stack
   call rax                      ; call the api address
-  add rsp, 32
-
+  add rsp, 32                   ; restore stack
   ; restore stack that store arguments
-  mov r8, [rbp-8]               ; read new stack size
+  mov r8, [rbp-2*8+0*8]         ; read new stack size
   add rsp, r8                   ; restore stack
-  add rsp, 8                    ; restore stack for store new stack size
+  mov r8, [rbp-2*8+1*8]         ; read adjusted stack size
+  add rsp, r8                   ; restore stack
+  add rsp, 2*8                  ; restore stack for store variables
   pop rsi                       ; restore rsi
   pop rdi                       ; restore rdi
   pop rbp                       ; restore rbp
