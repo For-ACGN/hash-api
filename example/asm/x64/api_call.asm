@@ -2,18 +2,7 @@
 [BITS 64]
 
 %include "../../../test/reg_x64.asm"
-; Example:
-;
-; %include "../../../test/reg_x64.asm"
-;
-; entry:
-;  Test_Prologue
-;  push rbx
-;  shellcode
-;  pop rbx
-;  Test_Epilogue
-;  ret
-;
+
 entry:
   Test_Prologue
   ; store context
@@ -25,12 +14,6 @@ entry:
 
   ; clear the direction flag
   cld
-
-  ; ensure stack is 16 bytes aligned
-  push rdi                      ; store rdi
-  mov rdi, rsp                  ; store current to rdi
-  and rdi, 0xF                  ; calculate the offset
-  sub rsp, rdi                  ; adjust current stack
 
   ; call "kernel32.dll, CreateThread"
   sub rsp, 32+5*8               ; reserve stack for arguments
@@ -58,10 +41,6 @@ entry:
   call api_call                 ; call api function
   add rsp, 32+1*8               ; restore stack
 
-  ; restore aligned stack
-  add rsp, rdi                  ; restore stack from rdi
-  pop rdi                       ; restore rdi
-
   ; restore context
   pop rbx                       ; restore rbx
   Test_Epilogue
@@ -84,12 +63,6 @@ API_WinExec:
   ; clear the direction flag
   cld
 
-  ; ensure stack is 16 bytes aligned
-  push rdi                      ; store rdi
-  mov rdi, rsp                  ; store current to rdi
-  and rdi, 0xF                  ; calculate the offset
-  sub rsp, rdi                  ; adjust current stack
-
   ; call "kernel32.dll, WinExec"
   mov rcx, 0xCA2DBA870B222A04   ; set function hash
   mov rdx, 0xB725F01C80CE0985   ; set hash key
@@ -101,10 +74,6 @@ API_WinExec:
   mov [rsp+32+0*8], r10         ; uCmdShow
   call api_call                 ; call api function
   add rsp, 32+1*8               ; restore stack
-
-  ; restore aligned stack
-  add rsp, rdi                  ; restore stack from rdi
-  pop rdi                       ; restore rdi
 
   pop rbx                       ; restore rbx
   ret                           ; exit thread
