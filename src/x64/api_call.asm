@@ -43,12 +43,9 @@ api_call:
   test rax, rax                 ; check rax is zero
   jz not_found_api              ;
   push rbp                      ; store rbp
+  push rdi                      ; store rdi
+  push rsi                      ; store rsi
   mov rbp, rsp                  ; create new stack frame
-  ; move arguments about api
-  mov rcx, r9                   ; set rcx from r8
-  mov rdx, [rbp+32+8+0*8]       ; set rdx from stack
-  mov r8, [rbp+32+8+1*8]        ; set r8 from stack
-  mov r9, [rbp+32+8+2*8]        ; set r9 from stack
   ; calculate new stack
   sub rsp, 8                    ; reserve stack for store new stack size
   imul r8, 8                    ; calculate new stack size
@@ -56,12 +53,28 @@ api_call:
   sub rsp, r8                   ; reserve stack
   ; copy arguments to new stack
 
-  ; call rax                      ; call the api address
+  mov rsi, rbp
+  add rsi, 8*8
+  mov rdi, rsp
+  mov rcx, r8
+  rep movsb
+
+  ; move arguments about api
+  mov rcx, r9                   ; set rcx from r8
+  mov rdx, [rbp+64+0*8]         ; set rdx from stack
+  mov r8, [rbp+64+1*8]          ; set r8 from stack
+  mov r9, [rbp+64+2*8]          ; set r9 from stack
+
+  sub rsp, 32
+  call rax                      ; call the api address
+  add rsp, 32
 
   ; restore stack that store arguments
   mov r8, [rbp-8]               ; read new stack size
   add rsp, r8                   ; restore stack
   add rsp, 8                    ; restore stack for store new stack size
+  pop rsi                       ; restore rsi
+  pop rdi                       ; restore rdi
   pop rbp                       ; restore rbp
   not_found_api:                ;
   ret                           ; return to the caller
