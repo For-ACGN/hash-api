@@ -54,7 +54,7 @@ func testAPICall() {
 	fmt.Printf("key:  0x%08X\n", key)
 	var threadID uint32
 	handle, _, err := syscall.SyscallN(
-		apiCall, hash, key,
+		apiCall, hash, key, 6,
 		0, 0, apiCall, 0, windows.CREATE_SUSPENDED,
 		uintptr(unsafe.Pointer(&threadID)),
 	)
@@ -64,6 +64,9 @@ func testAPICall() {
 	e := windows.CloseHandle(windows.Handle(handle))
 	if e != nil {
 		log.Fatalln("failed to close thread handle:", err)
+	}
+	if threadID == 0 {
+		log.Fatalln("unexpected thread id")
 	}
 	fmt.Println("thread id:", threadID)
 }
