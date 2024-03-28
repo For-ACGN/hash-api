@@ -64,7 +64,7 @@ func apiCall() {
 		log.Fatalln("unsupported architecture:", runtime.GOARCH)
 	}
 	ret, _, err := syscall.SyscallN(
-		apiCallAddr, uintptr(hash), uintptr(key),
+		apiCallAddr, uintptr(hash), uintptr(key), 5,
 		hProcess, address, bufAddr, bufLen, numRead,
 	)
 	fmt.Println(err)
