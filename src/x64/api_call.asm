@@ -38,13 +38,16 @@ api_call:
   call find_api                 ; call find api function
   pop r9                        ; restore rcx
   pop r8                        ; restore rdx
+
   ; check is find api function address
   test rax, rax                 ; check rax is zero
   jz not_found_api              ;
+  ; store context
   push rbp                      ; store rbp
   push rdi                      ; store rdi
   push rsi                      ; store rsi
   mov rbp, rsp                  ; create new stack frame
+
   ; calculate new stack size that need alloc
   sub rsp, 2*8                  ; reserve stack for store variables
   imul r8, 8                    ; calculate new stack size
@@ -55,11 +58,12 @@ api_call:
   and r8, 0xF                   ; calculate the offset
   mov [rbp-2*8+1*8], r8         ; store offset to stack
   sub rsp, r8                   ; adjust current stack
+
   ; copy arguments to the new stack
   mov rsi, rbp                  ; set source address
-  add rsi, 8*8                  ; add offset to target address
+  add rsi, 64+3*8               ; add offset to target address
   mov rdi, rsp                  ; set destination address
-  mov rcx, r8                   ; set num bytes
+  mov rcx, [rbp-2*8+0*8]        ; set num bytes
   rep movsb                     ; copy parameters on stack
   ; move arguments about api
   mov rcx, r9                   ; set rcx from r9
@@ -70,7 +74,8 @@ api_call:
   sub rsp, 32                   ; reserve stack
   call rax                      ; call the api address
   add rsp, 32                   ; restore stack
-  ; restore stack that store arguments
+
+  ; restore stack that store arguments and variables
   mov r8, [rbp-2*8+0*8]         ; read new stack size
   add rsp, r8                   ; restore stack
   mov r8, [rbp-2*8+1*8]         ; read adjusted stack size
