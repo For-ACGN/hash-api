@@ -1,10 +1,7 @@
 [ORG 0]
 [BITS 64]
 
-%include "../../../test/reg_x64.asm"
-
 entry:
-  Test_Prologue
   ; store context
   push rbx                      ; store rbx
 
@@ -43,7 +40,6 @@ entry:
 
   ; restore context
   pop rbx                       ; restore rbx
-  Test_Epilogue
   ret                           ; return to the caller
 
 ; calculate shellcode entry address
