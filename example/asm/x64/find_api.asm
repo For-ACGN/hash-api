@@ -21,11 +21,11 @@ entry:
 
   ; ensure stack is 16 bytes aligned
   push rdi                      ; store rdi
-  mov rdi, rsp                  ; store current to rdi
+  mov rdi, rsp                  ; store current stack to rdi
   and rdi, 0xF                  ; calculate the offset
   sub rsp, rdi                  ; adjust current stack
 
-  ; call WinExec
+  ; call "kernel32.dll, WinExec"
   xor rdx, rdx                  ; clear rdx
   lea rcx, [rbx+command]        ; lpCmdLine
   mov dl, [rbx+cmd_show]        ; uCmdShow

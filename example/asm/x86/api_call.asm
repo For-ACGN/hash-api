@@ -14,7 +14,7 @@ entry:
 
   ; ensure stack is 16 bytes aligned
   push edi                      ; store edi
-  mov edi, esp                  ; store current to edi
+  mov edi, esp                  ; store current stack to edi
   and edi, 0xF                  ; calculate the offset
   sub esp, edi                  ; adjust current stack
 
@@ -65,7 +65,7 @@ API_WinExec:
 
   ; ensure stack is 16 bytes aligned
   push edi                      ; store edi
-  mov edi, esp                  ; store current to edi
+  mov edi, esp                  ; store current stack to edi
   and edi, 0xF                  ; calculate the offset
   sub esp, edi                  ; adjust current stack
 

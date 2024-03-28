@@ -21,11 +21,11 @@ entry:
 
   ; ensure stack is 16 bytes aligned
   push edi                      ; store edi
-  mov edi, esp                  ; store current to edi
+  mov edi, esp                  ; store current stack to edi
   and edi, 0xF                  ; calculate the offset
   sub esp, edi                  ; adjust current stack
 
-  ; call WinExec
+  ; call "kernel32.dll, WinExec"
   lea edx, [ebx+command]        ; lpCmdLine
   xor ecx, ecx                  ; clear ecx
   mov cl, [ebx+cmd_show]        ; set uCmdShow
