@@ -11,7 +11,7 @@
 ;   unchanged: rdi, rsi, rbx, rbp, rsp, r12, r13, r14, r15.
 ;
 ; build:
-;   nasm -f bin -O3 api_call.asm -o api_call.bin
+;   nasm -f bin -O3 find_api.asm -o find_api.bin
 ;
 ; note:
 ;   these functions assumes the direction flag has already been cleared via a CLD instruction.
