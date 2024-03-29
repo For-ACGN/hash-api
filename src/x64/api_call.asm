@@ -28,11 +28,7 @@ section .data
   ror_mod  EQU ror_bit + 3              ; the number of the module name hash ror bit
   ror_func EQU ror_bit + 4              ; the number of the function name hash ror bit
 
-  rsv_var_stack EQU 2*8                 ; reserve stack size for store variables
-  var_arg_stack EQU 0*8                 ; the stack offset of the variable arguments stack
-  var_align_off EQU 1*8                 ; the stack offset of the variable aligned memory offset
-
-  arg_offset EQU 2*8+4*8+4*8            ; stack offset to the original arguments on stack
+  args_offset EQU 4*8+4*8               ; stack offset to the original arguments on stack
 
 ; [input]  [rcx = hash], [rdx = hash key], [r8 = num api args]
 ; api args [r9 = (rcx)], stack: rdx, r8, r9 and any stack params).
@@ -52,43 +48,32 @@ api_call:
   push rbp                              ; store rbp
   push rdi                              ; store rdi
   push rsi                              ; store rsi
+  mov rbp, rsp                          ; create new stack frame
 
   ; calculate new stack size that need alloc
-  sub rsp, rsv_var_stack                ; reserve stack for store variables
-  mov rbp, rsp                          ; create new stack frame
   imul r8, 8                            ; calculate new stack size
-  mov [rbp+var_arg_stack], r8           ; store new stack size
   sub rsp, r8                           ; reserve stack
   ; ensure stack is 16 bytes aligned
-  mov r8, rsp                           ; store current stack to r8
-  and r8, 0xF                           ; calculate the offset
-  mov [rbp+var_align_off], r8           ; store offset to stack
-  sub rsp, r8                           ; adjust current stack
+  and rsp, 0xFFFFFFFFFFFFFFF0           ; adjust stack
 
   ; copy arguments to the new stack
   mov rsi, rbp                          ; set source address
-  add rsi, arg_offset+3*8               ; add offset to target address
+  add rsi, args_offset+3*8              ; add offset to target address
   mov rdi, rsp                          ; set destination address
-  mov rcx, [rbp+var_arg_stack]          ; set num bytes
+  mov rcx, r8                           ; set num bytes
   rep movsb                             ; copy parameters on stack
   ; move arguments about api
   mov rcx, r9                           ; set rcx from r9
-  mov rdx, [rbp+arg_offset+0*8]         ; set rdx from stack
-  mov r8, [rbp+arg_offset+1*8]          ; set r8 from stack
-  mov r9, [rbp+arg_offset+2*8]          ; set r9 from stack
+  mov rdx, [rbp+args_offset+0*8]        ; set rdx from stack
+  mov r8, [rbp+args_offset+1*8]         ; set r8 from stack
+  mov r9, [rbp+args_offset+2*8]         ; set r9 from stack
   ; call api function
   sub rsp, 32                           ; reserve stack
   call rax                              ; call the api address
   add rsp, 32                           ; restore stack
 
-  ; restore stack that store arguments and variables
-  mov r8, [rbp+var_arg_stack]           ; read new stack size
-  add rsp, r8                           ; restore stack
-  mov r8, [rbp+var_align_off]           ; read adjusted stack size
-  add rsp, r8                           ; restore stack
-  add rsp, rsv_var_stack                ; restore stack for store variables
-
   ; restore context
+  mov rsp, rbp                          ; restore stack
   pop rsi                               ; restore rsi
   pop rdi                               ; restore rdi
   pop rbp                               ; restore rbp
