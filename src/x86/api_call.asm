@@ -33,14 +33,16 @@ section .data
   var_mod_hash  EQU 4*4                 ; the stack offset of the variable module name hash
   var_func_hash EQU 5*4                 ; the stack offset of the variable function name hash
 
+  args_offset EQU (3+1)*4+2*4           ; stack offset to the original arguments on stack
+
 ; [input]  hash and hash key must be pushed onto stack first,
 ;          then push API parameters to the stack.
 ; [output] [eax = the return value from the API call].
 ;          [ecx = 0(not found, caller must remember pop API parameters)].
 api_call:
   ; try to find api address
-  mov ecx, [esp+4]                      ; copy hash data from stack
-  mov edx, [esp+8]                      ; copy hash key from stack
+  mov ecx, [esp+1*4]                    ; copy hash data from stack
+  mov edx, [esp+2*4]                    ; copy hash key from stack
   push edx                              ; push hash key
   push ecx                              ; push hash data
   call find_api                         ; call find api function
@@ -48,19 +50,39 @@ api_call:
   ; check is find api function address
   test eax, eax                         ; check eax is zero
   jz not_found_api                      ;
-  ; store return address and adjust stack
-  ; reuse stack that store argument hash and hash key
-  mov [esp+4], esi                      ; store esi to the stack
-  pop esi                               ; store return address
-  ; call the api function
-  add esp, 2*4                          ; adjust stack for skip two arguments
+  ; store context
+  push ebp                              ; store ebp
+  push edi                              ; store edi
+  push esi                              ; store esi
+  mov ebp, esp                          ; create new stack frame
+
+  ; calculate new stack size that need alloc
+  mov ecx, [ebp+args_offset+0*4]        ; read the number of arguments
+  imul ecx, 4                           ; calculate new stack size
+  sub esp, ecx                          ; reserve stack
+  and esp, 0xFFFFFFF0                   ; ensure stack is 16 bytes aligned
+
+  ; copy arguments to the new stack
+  mov esi, ebp                          ; set source address
+  add esi, args_offset+1*4              ; add offset to target address
+  mov edi, esp                          ; set destination address
+  rep movsb                             ; copy parameters to new stack
   call eax                              ; call the api address
-  sub esp, 2*4                          ; restore stack
-  ; restore stack and return address
-  push esi                              ; restore return address
-  mov esi, [esp+4]                      ; restore esi from the stack
+
+  ; restore context
+  mov esp, ebp                          ; restore stack
+  pop esi                               ; restore rsi
+  pop edi                               ; restore rdi
+  pop ebp                               ; restore rbp
   not_found_api:                        ;
-  ret 2*4                               ; return to the caller
+  ; release stack about arguments
+  pop edx                               ; save return address
+  mov ecx, [esp+3*4]                    ; read the number of arguments
+  add ecx, 3                            ; add (hash hash, key, num)
+  imul ecx, 4                           ; calculate the stack size that need be release
+  add esp, ecx                          ; restore stack
+  push edx                              ; push return address
+  ret                                   ; return to the caller
 
 ; [input]  hash and hash key must be pushed onto stack.
 ; [output] [eax = api function address].
