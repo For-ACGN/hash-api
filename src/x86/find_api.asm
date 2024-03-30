@@ -43,21 +43,19 @@ find_api:
   push edi                              ; store edi
 
   ; reserve stack for store arguments and variables
-  sub esp, rsv_stack
+  sub esp, rsv_stack                    ; reserve stack
+  mov ebp, esp                          ; for read arguments and variables easily in function
 
   ; set arguments and variables
   xor eax, eax                          ; clear eax for clean stack
-  mov ecx, [esp+rsv_stack+5*4]          ; read hash from stack
-  mov edx, [esp+rsv_stack+6*4]          ; read hash key from stack
-  mov [esp+arg_func_hash], ecx          ; store hash to stack
-  mov [esp+arg_hash_key], edx           ; store hash key to stack
-  mov [esp+var_seed_hash], eax          ; clean stack for store seed hash
-  mov [esp+var_key_hash], eax           ; clean stack for store key hash
-  mov [esp+var_mod_hash], eax           ; clean stack for store module name hash
-  mov [esp+var_func_hash], eax          ; clean stack for store function name hash
-
-  ; for read arguments and variables easily in function
-  mov ebp, esp
+  mov ecx, [ebp+rsv_stack+5*4]          ; read hash from stack
+  mov edx, [ebp+rsv_stack+6*4]          ; read hash key from stack
+  mov [ebp+arg_func_hash], ecx          ; store hash to stack
+  mov [ebp+arg_hash_key], edx           ; store hash key to stack
+  mov [ebp+var_seed_hash], eax          ; clean stack for store seed hash
+  mov [ebp+var_key_hash], eax           ; clean stack for store key hash
+  mov [ebp+var_mod_hash], eax           ; clean stack for store module name hash
+  mov [ebp+var_func_hash], eax          ; clean stack for store function name hash
 
   ; precompute hash
   call calc_seed_hash                   ; initialize seed hash
@@ -71,7 +69,7 @@ find_api:
   call get_next_module                  ; begin find module and function
 
   ; restore stack for store arguments and variables
-  add esp, rsv_stack
+  add esp, rsv_stack                    ; restore stack
 
   ; restore context
   pop edi                               ; restore edi
