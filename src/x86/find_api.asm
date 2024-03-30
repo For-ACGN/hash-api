@@ -1,14 +1,18 @@
 ; [original author: Stephen Fewer]
 ;
-; Windows stdcall calling convention:
-; https://learn.microsoft.com/en-us/cpp/cpp/stdcall
-; changed:   eax, ecx, edx.
-; unchanged: ebx, esi, edi, ebp, esp.
+; stdcall calling convention:
+;   https://learn.microsoft.com/en-us/cpp/cpp/stdcall
 ;
-; nasm -f bin -O3 find_api.asm -o find_api.bin
+; register:
+;   changed:   eax, ecx, edx.
+;   unchanged: ebx, esi, edi, ebp, esp.
 ;
-; these functions assumes the direction flag has already been cleared via a CLD instruction.
-; these functions are unable to call forwarded exports.
+; build:
+;   nasm -f bin -O3 find_api.asm -o find_api.bin
+;
+; note:
+;   these functions assumes the direction flag has already been cleared via a CLD instruction.
+;   these functions are unable to call forwarded exports.
 
 [BITS 32]
 
