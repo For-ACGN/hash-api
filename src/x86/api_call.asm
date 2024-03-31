@@ -5,7 +5,7 @@
 ;
 ; register:
 ;   changed:   eax, ecx, edx.
-;   unchanged: ebx, esi, edi, ebp, esp.
+;   unchanged: edi, esi, ebx, ebp, esp.
 ;
 ; build:
 ;   nasm -f bin -O3 api_call.asm -o api_call.bin
@@ -51,12 +51,12 @@ api_call:
   test eax, eax                         ; check eax is zero
   jz not_found_api                      ;
   ; store context
-  push ebp                              ; store ebp
   push edi                              ; store edi
   push esi                              ; store esi
+  push ebp                              ; store ebp
   mov ebp, esp                          ; create new stack frame
 
-  ; calculate new stack size that need alloc
+  ; calculate the new stack size that need be allocated
   mov ecx, [ebp+args_offset+0*4]        ; read the number of arguments
   imul ecx, 4                           ; calculate new stack size
   sub esp, ecx                          ; reserve stack
@@ -71,11 +71,11 @@ api_call:
 
   ; restore context
   mov esp, ebp                          ; restore stack
+  pop ebp                               ; restore rbp
   pop esi                               ; restore rsi
   pop edi                               ; restore rdi
-  pop ebp                               ; restore rbp
   not_found_api:                        ;
-  ; release stack about arguments
+  ; release stack that store input arguments
   pop edx                               ; save return address
   mov ecx, [esp+2*4]                    ; read the number of arguments
   add ecx, 3                            ; add (hash hash, key, num)
@@ -88,10 +88,10 @@ api_call:
 ; [output] [eax = api function address].
 find_api:
   ; store context
+  push edi                              ; store edi
+  push esi                              ; store esi
   push ebx                              ; store ebx
   push ebp                              ; store ebp
-  push esi                              ; store esi
-  push edi                              ; store edi
 
   ; reserve stack for store arguments and variables
   sub esp, rsv_stack                    ; reserve stack
@@ -123,10 +123,10 @@ find_api:
   add esp, rsv_stack                    ; restore stack
 
   ; restore context
-  pop edi                               ; restore edi
-  pop esi                               ; restore esi
   pop ebp                               ; restore ebp
   pop ebx                               ; restore ebx
+  pop esi                               ; restore esi
+  pop edi                               ; restore edi
   ret 2*4                               ; return to the caller
 
 calc_seed_hash:

@@ -5,7 +5,7 @@
 ;
 ; register:
 ;   changed:   eax, ecx, edx.
-;   unchanged: ebx, esi, edi, ebp, esp.
+;   unchanged: edi, esi, ebx, ebp, esp.
 ;
 ; build:
 ;   nasm -f bin -O3 find_api.asm -o find_api.bin
@@ -37,10 +37,10 @@ section .data
 ; [output] [eax = api function address].
 find_api:
   ; store context
+  push edi                              ; store edi
+  push esi                              ; store esi
   push ebx                              ; store ebx
   push ebp                              ; store ebp
-  push esi                              ; store esi
-  push edi                              ; store edi
 
   ; reserve stack for store arguments and variables
   sub esp, rsv_stack                    ; reserve stack
@@ -72,10 +72,10 @@ find_api:
   add esp, rsv_stack                    ; restore stack
 
   ; restore context
-  pop edi                               ; restore edi
-  pop esi                               ; restore esi
   pop ebp                               ; restore ebp
   pop ebx                               ; restore ebx
+  pop esi                               ; restore esi
+  pop edi                               ; restore edi
   ret 2*4                               ; return to the caller
 
 calc_seed_hash:

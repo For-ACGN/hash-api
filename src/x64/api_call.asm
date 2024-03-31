@@ -50,7 +50,7 @@ api_call:
   push rbp                              ; store rbp
   mov rbp, rsp                          ; create new stack frame
 
-  ; calculate new stack size that need alloc
+  ; calculate the new stack size that need be allocated
   imul r8, 8                            ; calculate new stack size
   sub rsp, r8                           ; reserve stack
   and rsp, 0xFFFFFFFFFFFFFFF0           ; ensure stack is 16 bytes aligned
