@@ -1,10 +1,7 @@
 [ORG 0]
 [BITS 32]
 
-%include "../../../test/reg_x86.asm"
-
 entry:
-  Test_Prologue
   ; store context
   push ebx                              ; store ebx
   cld                                   ; clear the direction flag
@@ -36,7 +33,6 @@ entry:
 
   ; restore context
   pop ebx                               ; restore ebx
-  Test_Epilogue
   ret                                   ; return to the caller
 
 ; calculate shellcode entry address
@@ -49,7 +45,7 @@ calc_entry_addr:
 win_exec:
   ; store context
   push ebx                              ; store ebx
-  mov ebx, ecx                          ; read entry address from ecx
+  mov ebx, [esp+2*4]                    ; read entry address from stack
   cld                                   ; clear the direction flag
 
   ; call "kernel32.dll, WinExec"
