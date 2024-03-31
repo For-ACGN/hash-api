@@ -77,7 +77,7 @@ api_call:
   not_found_api:                        ;
   ; release stack about arguments
   pop edx                               ; save return address
-  mov ecx, [esp+3*4]                    ; read the number of arguments
+  mov ecx, [esp+2*4]                    ; read the number of arguments
   add ecx, 3                            ; add (hash hash, key, num)
   imul ecx, 4                           ; calculate the stack size that need be release
   add esp, ecx                          ; restore stack
