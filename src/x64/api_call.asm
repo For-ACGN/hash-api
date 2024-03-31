@@ -45,9 +45,9 @@ api_call:
   test rax, rax                         ; check rax is zero
   jz not_found_api                      ;
   ; store context
-  push rbp                              ; store rbp
   push rdi                              ; store rdi
   push rsi                              ; store rsi
+  push rbp                              ; store rbp
   mov rbp, rsp                          ; create new stack frame
 
   ; calculate new stack size that need alloc
@@ -73,9 +73,9 @@ api_call:
 
   ; restore context
   mov rsp, rbp                          ; restore stack
+  pop rbp                               ; restore rbp
   pop rsi                               ; restore rsi
   pop rdi                               ; restore rdi
-  pop rbp                               ; restore rbp
   not_found_api:                        ;
   ret                                   ; return to the caller
 
@@ -83,8 +83,8 @@ api_call:
 ; [output] [rax = api function address].
 find_api:
   ; store context
-  push rbx                              ; store rbx
   push rsi                              ; store rsi
+  push rbx                              ; store rbx
   push r12                              ; store seed hash
   push r13                              ; store key hash
   push r14                              ; store module name hash
@@ -110,8 +110,8 @@ find_api:
   pop r14                               ; restore r14
   pop r13                               ; restore r13
   pop r12                               ; restore r12
-  pop rsi                               ; restore rsi
   pop rbx                               ; restore rbx
+  pop rsi                               ; restore rsi
   ret                                   ; return to the caller
 
 calc_seed_hash:

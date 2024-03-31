@@ -32,8 +32,8 @@ section .data
 ; [output] [rax = api function address].
 find_api:
   ; store context
-  push rbx                              ; store rbx
   push rsi                              ; store rsi
+  push rbx                              ; store rbx
   push r12                              ; store seed hash
   push r13                              ; store key hash
   push r14                              ; store module name hash
@@ -59,8 +59,8 @@ find_api:
   pop r14                               ; restore r14
   pop r13                               ; restore r13
   pop r12                               ; restore r12
-  pop rsi                               ; restore rsi
   pop rbx                               ; restore rbx
+  pop rsi                               ; restore rsi
   ret                                   ; return to the caller
 
 calc_seed_hash:
