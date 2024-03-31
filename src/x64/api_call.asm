@@ -28,7 +28,7 @@ section .data
   ror_mod  EQU ror_bit + 3              ; the number of the module name hash ror bit
   ror_func EQU ror_bit + 4              ; the number of the function name hash ror bit
 
-  args_offset EQU 4*8+4*8               ; stack offset to the original arguments on stack
+  args_offset EQU (3+1)*8+32            ; stack offset to the original arguments on stack
 
 ; [input]  [rcx = hash], [rdx = hash key], [r8 = num api args]
 ; api args [r9 = (rcx)], stack: rdx, r8, r9 and any stack params).
@@ -53,15 +53,14 @@ api_call:
   ; calculate new stack size that need alloc
   imul r8, 8                            ; calculate new stack size
   sub rsp, r8                           ; reserve stack
-  ; ensure stack is 16 bytes aligned
-  and rsp, 0xFFFFFFFFFFFFFFF0           ; adjust stack
+  and rsp, 0xFFFFFFFFFFFFFFF0           ; ensure stack is 16 bytes aligned
 
   ; copy arguments to the new stack
   mov rsi, rbp                          ; set source address
   add rsi, args_offset+3*8              ; add offset to target address
   mov rdi, rsp                          ; set destination address
   mov rcx, r8                           ; set num bytes
-  rep movsb                             ; copy parameters on stack
+  rep movsb                             ; copy parameters to new stack
   ; move arguments about api
   mov rcx, r9                           ; set rcx from r9
   mov rdx, [rbp+args_offset+0*8]        ; set rdx from stack
