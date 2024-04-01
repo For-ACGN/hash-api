@@ -34,7 +34,7 @@ calc_entry_addr:
   ret                                   ; return to entry
 
 hash_api:
-  %include "../../../src/x64/api_call.asm"
+  %include "src/x64/api_call.asm"
 
 command:
   db "calc.exe", 0

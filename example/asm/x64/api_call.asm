@@ -70,7 +70,7 @@ win_exec:
   ret                                   ; exit thread
 
 hash_api:
-  %include "../../../src/x64/api_call.asm"
+  %include "src/x64/api_call.asm"
 
 command:
   db "calc.exe", 0
