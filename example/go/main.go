@@ -82,9 +82,9 @@ func loadShellcode(name string) uintptr {
 	)
 	switch runtime.GOARCH {
 	case "amd64":
-		shellcode, err = os.ReadFile(fmt.Sprintf("../../bin/x64/%s.bin", name))
+		shellcode, err = os.ReadFile(fmt.Sprintf("bin/x64/%s.bin", name))
 	case "386":
-		shellcode, err = os.ReadFile(fmt.Sprintf("../../bin/x86/%s.bin", name))
+		shellcode, err = os.ReadFile(fmt.Sprintf("bin/x86/%s.bin", name))
 	default:
 		log.Fatalln("unsupported architecture:", runtime.GOARCH)
 	}
