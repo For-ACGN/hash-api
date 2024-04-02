@@ -109,11 +109,12 @@ find_api:
   mov [ebp+var_func_hash], eax          ; clean stack for store function name hash
 
   ; precompute hash
+  xor ecx, ecx                          ; clear ecx
   call calc_seed_hash                   ; initialize seed hash
   call calc_key_hash                    ; initialize key hash
 
   ; get the first module
-  mov ecx, 48                           ; set offset to ecx
+  mov cl, 48                            ; set offset to ecx
   mov ebx, [fs:ecx]                     ; get a pointer to the PEB
   mov ebx, [ebx+12]                     ; get PEB->LDR
   mov ebx, [ebx+20]                     ; get the first module from the InMemoryOrder module list
@@ -132,7 +133,7 @@ find_api:
 calc_seed_hash:
   mov edx, [ebp+arg_hash_key]           ; initialize edx for store seed hash
   lea esi, [ebp+arg_hash_key]           ; set address for load string byte
-  mov ecx, hash_key_size                ; set the loop times with hash key
+  mov cl, hash_key_size                 ; set the loop times with hash key
   read_hash_key_0:                      ;
   xor eax, eax                          ; clear eax
   lodsb                                 ; load one byte from hash key
@@ -145,7 +146,7 @@ calc_seed_hash:
 calc_key_hash:
   mov edx, [ebp+var_seed_hash]          ; initialize edx for store key hash
   lea esi, [ebp+arg_hash_key]           ; set address for load string byte
-  mov ecx, hash_key_size                ; set the loop times with hash key
+  mov cl, hash_key_size                 ; set the loop times with hash key
   read_hash_key_1:                      ;
   xor eax, eax                          ; clear eax
   lodsb                                 ; load one byte from hash key
