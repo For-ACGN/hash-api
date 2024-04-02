@@ -95,12 +95,13 @@ find_api:
   mov r9, rdx                           ; hash key
 
   ; precompute hash
+  xor rcx, rcx
   call calc_seed_hash                   ; initialize seed hash
   call calc_key_hash                    ; initialize key hash
 
   ; get the first module
-  mov rcx, 96                           ; set offset to rcx
-  mov rbx, [gs:rcx]                     ; get a pointer to the PEB
+  mov cl, 96                            ; set offset to rcx
+  mov rbx, [gs:rcx]                      ; get a pointer to the PEB
   mov rbx, [rbx+24]                     ; get PEB->LDR
   mov rbx, [rbx+32]                     ; get the first module from the InMemoryOrder module list
   call get_next_module                  ; begin find module and function
@@ -118,7 +119,7 @@ calc_seed_hash:
   mov r12, r9                           ; initialize r12 for store seed hash
   push r9                               ; push hash key to stack
   mov rsi, rsp                          ; set address for load string byte
-  mov rcx, hash_key_size                ; set the loop times with hash key
+  mov cl, hash_key_size                 ; set the loop times with hash key
   read_hash_key_0:                      ;
   xor rax, rax                          ; clear rax
   lodsb                                 ; load one byte from hash key
@@ -132,7 +133,7 @@ calc_key_hash:
   mov r13, r12                          ; initialize r13 for store key hash
   push r9                               ; push hash key to stack
   mov rsi, rsp                          ; set address for load string byte
-  mov rcx, hash_key_size                ; set the loop times with hash key
+  mov cl, hash_key_size                 ; set the loop times with hash key
   read_hash_key_1:                      ;
   xor rax, rax                          ; clear rax
   lodsb                                 ; load one byte from hash key
