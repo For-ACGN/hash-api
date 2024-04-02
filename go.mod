@@ -6,7 +6,7 @@ require (
 	github.com/For-ACGN/monkey v0.0.0-20240317114606-276cb1362405
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.9.0
-	golang.org/x/sys v0.17.0
+	golang.org/x/sys v0.19.0
 )
 
 require (
