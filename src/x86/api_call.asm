@@ -108,10 +108,30 @@ find_api:
   mov [ebp+var_mod_hash], eax           ; clean stack for store module name hash
   mov [ebp+var_func_hash], eax          ; clean stack for store function name hash
 
-  ; precompute hash
+  ; calculate seed hash
   xor ecx, ecx                          ; clear ecx
-  call calc_seed_hash                   ; initialize seed hash
-  call calc_key_hash                    ; initialize key hash
+  mov edx, [ebp+arg_hash_key]           ; initialize edx for store seed hash
+  lea esi, [ebp+arg_hash_key]           ; set address for load string byte
+  mov cl, hash_key_size                 ; set the loop times with hash key
+  read_hash_key_0:                      ;
+  xor eax, eax                          ; clear eax
+  lodsb                                 ; load one byte from hash key
+  ror edx, ror_seed                     ; rotate right the hash value
+  add edx, eax                          ; add the next byte of hash key
+  loop read_hash_key_0                  ; loop until read hash key finish
+  mov [ebp+var_seed_hash], edx          ; save seed hash to stack
+
+  ; calculate key hash
+  mov edx, [ebp+var_seed_hash]          ; initialize edx for store key hash
+  lea esi, [ebp+arg_hash_key]           ; set address for load string byte
+  mov cl, hash_key_size                 ; set the loop times with hash key
+  read_hash_key_1:                      ;
+  xor eax, eax                          ; clear eax
+  lodsb                                 ; load one byte from hash key
+  ror edx, ror_key                      ; rotate right the hash value
+  add edx, eax                          ; add the next byte of hash key
+  loop read_hash_key_1                  ; loop until read hash key finish
+  mov [ebp+var_key_hash], edx           ; save key hash to stack
 
   ; get the first module
   mov cl, 48                            ; set offset to ecx
@@ -129,32 +149,6 @@ find_api:
   pop esi                               ; restore esi
   pop edi                               ; restore edi
   ret 2*4                               ; return to the caller
-
-calc_seed_hash:
-  mov edx, [ebp+arg_hash_key]           ; initialize edx for store seed hash
-  lea esi, [ebp+arg_hash_key]           ; set address for load string byte
-  mov cl, hash_key_size                 ; set the loop times with hash key
-  read_hash_key_0:                      ;
-  xor eax, eax                          ; clear eax
-  lodsb                                 ; load one byte from hash key
-  ror edx, ror_seed                     ; rotate right the hash value
-  add edx, eax                          ; add the next byte of hash key
-  loop read_hash_key_0                  ; loop until read hash key finish
-  mov [ebp+var_seed_hash], edx          ; save seed hash to stack
-  ret                                   ; return to the caller
-
-calc_key_hash:
-  mov edx, [ebp+var_seed_hash]          ; initialize edx for store key hash
-  lea esi, [ebp+arg_hash_key]           ; set address for load string byte
-  mov cl, hash_key_size                 ; set the loop times with hash key
-  read_hash_key_1:                      ;
-  xor eax, eax                          ; clear eax
-  lodsb                                 ; load one byte from hash key
-  ror edx, ror_key                      ; rotate right the hash value
-  add edx, eax                          ; add the next byte of hash key
-  loop read_hash_key_1                  ; loop until read hash key finish
-  mov [ebp+var_key_hash], edx           ; save key hash to stack
-  ret                                   ; return to the caller
 
 get_next_module:
   mov edi, [ebp+var_seed_hash]          ; initialize edi for store module name hash
