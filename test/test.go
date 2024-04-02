@@ -32,6 +32,7 @@ func testFindAPI() {
 		log.Fatalf("expected address: 0x%08X, actual: 0x%08X\n", proc, apiAddr)
 	}
 
+	// api not found
 	hash, key = calcHash("invalid.dll", "ReadProcessMemory")
 	apiAddr, _, err = syscall.SyscallN(findAPI, hash, key)
 	fmt.Println(err)
@@ -69,6 +70,21 @@ func testAPICall() {
 		log.Fatalln("unexpected thread id")
 	}
 	fmt.Println("thread id:", threadID)
+
+	// api not found
+	hash, key = calcHash("invalid.dll", "ReadProcessMemory")
+	ret, _, err := syscall.SyscallN(apiCall, hash, key, 5, 0, 0, 0, 0, 0)
+	fmt.Println(err)
+	if ret != 0 {
+		log.Fatalln("unexpected return value:", ret)
+	}
+
+	hash, key = calcHash("kernel32.dll", "Invalid")
+	ret, _, err = syscall.SyscallN(apiCall, hash, key, 5, 0, 0, 0, 0, 0)
+	fmt.Println(err)
+	if ret != 0 {
+		log.Fatalln("unexpected return value:", ret)
+	}
 }
 
 func loadShellcode(name string) uintptr {
