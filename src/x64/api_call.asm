@@ -94,28 +94,8 @@ find_api:
   mov r8, rcx                           ; function hash
   mov r9, rdx                           ; hash key
 
-  ; precompute hash
-  xor rcx, rcx
-  call calc_seed_hash                   ; initialize seed hash
-  call calc_key_hash                    ; initialize key hash
-
-  ; get the first module
-  mov cl, 96                            ; set offset to rcx
-  mov rbx, [gs:rcx]                      ; get a pointer to the PEB
-  mov rbx, [rbx+24]                     ; get PEB->LDR
-  mov rbx, [rbx+32]                     ; get the first module from the InMemoryOrder module list
-  call get_next_module                  ; begin find module and function
-
-  ; restore context
-  pop r15                               ; restore r15
-  pop r14                               ; restore r14
-  pop r13                               ; restore r13
-  pop r12                               ; restore r12
-  pop rbx                               ; restore rbx
-  pop rsi                               ; restore rsi
-  ret                                   ; return to the caller
-
-calc_seed_hash:
+  ; calculate seed hash
+  xor rcx, rcx                          ; clear rcx
   mov r12, r9                           ; initialize r12 for store seed hash
   push r9                               ; push hash key to stack
   mov rsi, rsp                          ; set address for load string byte
@@ -127,9 +107,8 @@ calc_seed_hash:
   add r12, rax                          ; add the next byte of hash key
   loop read_hash_key_0                  ; loop until read hash key finish
   pop r9                                ; restore stack
-  ret                                   ; return to the caller
 
-calc_key_hash:
+  ; calculate key hash
   mov r13, r12                          ; initialize r13 for store key hash
   push r9                               ; push hash key to stack
   mov rsi, rsp                          ; set address for load string byte
@@ -141,6 +120,21 @@ calc_key_hash:
   add r13, rax                          ; add the next byte of hash key
   loop read_hash_key_1                  ; loop until read hash key finish
   pop r9                                ; restore stack
+
+  ; get the first module
+  mov cl, 96                            ; set offset to rcx
+  mov rbx, [gs:rcx]                     ; get a pointer to the PEB
+  mov rbx, [rbx+24]                     ; get PEB->LDR
+  mov rbx, [rbx+32]                     ; get the first module from the InMemoryOrder module list
+  call get_next_module                  ; begin find module and function
+
+  ; restore context
+  pop r15                               ; restore r15
+  pop r14                               ; restore r14
+  pop r13                               ; restore r13
+  pop r12                               ; restore r12
+  pop rbx                               ; restore rbx
+  pop rsi                               ; restore rsi
   ret                                   ; return to the caller
 
 get_next_module:
