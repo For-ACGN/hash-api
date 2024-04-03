@@ -17,7 +17,7 @@ entry:
   mov rcx, 0xCA2DBA870B222A04           ; set function hash
   mov rdx, 0xB725F01C80CE0985           ; set hash key
   call find_api                         ; try to find api address
-  cmp rax, 0                            ; check target function is found
+  test rax, rax                         ; check target function is found
   jz not_found                          ;
 
   ; call "kernel32.dll, WinExec"

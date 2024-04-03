@@ -17,7 +17,7 @@ entry:
   push 0x61DA2999                       ; set hash key
   push 0x0AE20914                       ; set function hash
   call find_api                         ; try to find api address
-  cmp eax, 0                            ; check target function is found
+  test eax, eax                         ; check target function is found
   jz not_found                          ;
 
   ; call "kernel32.dll, WinExec"
