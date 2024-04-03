@@ -16,12 +16,12 @@ entry:
   mov rdx, 0x702824E783A5AC49           ; set hash key
   mov r8, 6                             ; set num arguments
   xor r9, r9                            ; lpThreadAttributes
-  mov qword[rsp+32+0*8], 0              ; dwStackSize
+  mov [rsp+32+0*8], r9                  ; dwStackSize
   lea r10, [rbx+win_exec]               ; calculate function address
   mov [rsp+32+1*8], r10                 ; lpStartAddress
   mov [rsp+32+2*8], rbx                 ; lpParameter, set entry address
-  mov qword [rsp+32+3*8], 0             ; dwCreationFlags
-  mov qword [rsp+32+4*8], 0             ; lpThreadId
+  mov [rsp+32+3*8], r9                  ; dwCreationFlags
+  mov [rsp+32+4*8], r9                  ; lpThreadId
   call api_call                         ; call api function
   add rsp, 32+5*8                       ; restore stack for arguments
 
