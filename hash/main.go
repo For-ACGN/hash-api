@@ -13,7 +13,7 @@ import (
 
 var (
 	format   string
-	dllName  string
+	modName  string
 	funcName string
 )
 
@@ -26,13 +26,13 @@ func init() {
 		defaultFormat = "64"
 	}
 	flag.StringVar(&format, "fmt", defaultFormat, "binary format: 32 or 64")
-	flag.StringVar(&dllName, "mod", "kernel32.dll", "module name")
+	flag.StringVar(&modName, "mod", "kernel32.dll", "module name")
 	flag.StringVar(&funcName, "func", "WinExec", "function name")
 	flag.Parse()
 }
 
 func main() {
-	fmt.Println("module:  ", dllName)
+	fmt.Println("module:  ", modName)
 	fmt.Println("function:", funcName)
 	fmt.Printf("format:   %s bit\n", format)
 	fmt.Println()
@@ -44,10 +44,10 @@ func main() {
 	)
 	switch format {
 	case "32":
-		apiHash, hashKey, err = rorwk.Hash32(dllName, funcName)
+		apiHash, hashKey, err = rorwk.Hash32(modName, funcName)
 		numZero = "8"
 	case "64":
-		apiHash, hashKey, err = rorwk.Hash64(dllName, funcName)
+		apiHash, hashKey, err = rorwk.Hash64(modName, funcName)
 		numZero = "16"
 	default:
 		log.Fatalln("invalid format:", format)
