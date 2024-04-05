@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -11,16 +10,13 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-var scPath string
-
-func init() {
-	flag.StringVar(&scPath, "sc", "shellcode.bin", "shellcode file path")
-	flag.Parse()
-}
-
 func main() {
+	if len(os.Args) < 2 {
+		log.Fatalln("must input shellcode file path")
+	}
+
 	// read shellcode from file
-	shellcode, err := os.ReadFile(scPath)
+	shellcode, err := os.ReadFile(os.Args[1])
 	checkError(err)
 
 	// allocate RWX memory for shellcode
