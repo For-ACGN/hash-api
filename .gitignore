@@ -29,3 +29,6 @@ bin/*/hexbin
 
 # shellcode in example
 example/asm/*/*.bin
+
+# shellcode in test
+test/*.bin
