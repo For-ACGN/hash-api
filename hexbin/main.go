@@ -11,11 +11,11 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		log.Fatal("must input file path")
+		log.Fatalln("must input file path")
 	}
 	data, err := os.ReadFile(os.Args[1])
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 	fmt.Println(dumpBytesHex(data))
 }
