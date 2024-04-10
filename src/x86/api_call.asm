@@ -17,13 +17,13 @@
 [BITS 32]
 
 section .data
-  hash_key_size EQU 0x04                ; the hash key byte slice length
+  hash_key_size EQU 4                   ; the hash key byte slice length
 
-  ror_bit  EQU 0x000000004              ; the number of the base ror bit
-  ror_seed EQU ror_bit + 1              ; the number of the seed hash ror bit
-  ror_key  EQU ror_bit + 2              ; the number of the hash key ror bit
-  ror_mod  EQU ror_bit + 3              ; the number of the module name hash ror bit
-  ror_func EQU ror_bit + 4              ; the number of the function name hash ror bit
+  ror_bit  EQU 4                        ; the number of the base ror bit
+  ror_seed EQU ror_bit+1                ; the number of the seed hash ror bit
+  ror_key  EQU ror_bit+2                ; the number of the hash key ror bit
+  ror_mod  EQU ror_bit+3                ; the number of the module name hash ror bit
+  ror_func EQU ror_bit+4                ; the number of the function name hash ror bit
 
   rsv_stack     EQU (2+4)*4             ; reserve stack size for store arguments and variables
   arg_func_hash EQU 0*4                 ; the stack offset of the argument function hash
