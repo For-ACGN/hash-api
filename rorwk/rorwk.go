@@ -15,7 +15,13 @@ func Hash64(module, function string) ([]byte, []byte, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	const bits = 8
+	const (
+		rorBits = 8
+		rorSeed = rorBits + 1
+		rorKey  = rorBits + 2
+		rorMod  = rorBits + 3
+		rorFunc = rorBits + 4
+	)
 	var (
 		seedHash     uint64
 		keyHash      uint64
@@ -26,22 +32,22 @@ func Hash64(module, function string) ([]byte, []byte, error) {
 	hashKey := hash[:8]
 	seedHash = binary.LittleEndian.Uint64(hashKey)
 	for _, b := range hashKey {
-		seedHash = ror64(seedHash, bits+1)
+		seedHash = ror64(seedHash, rorSeed)
 		seedHash += uint64(b)
 	}
 	keyHash = seedHash
 	for _, b := range hashKey {
-		keyHash = ror64(keyHash, bits+2)
+		keyHash = ror64(keyHash, rorKey)
 		keyHash += uint64(b)
 	}
 	moduleHash = seedHash
 	for _, c := range toUnicode(module + "\x00") {
-		moduleHash = ror64(moduleHash, bits+3)
+		moduleHash = ror64(moduleHash, rorMod)
 		moduleHash += uint64(c)
 	}
 	functionHash = seedHash
 	for _, c := range function + "\x00" {
-		functionHash = ror64(functionHash, bits+4)
+		functionHash = ror64(functionHash, rorFunc)
 		functionHash += uint64(c)
 	}
 	apiHash := seedHash + keyHash + moduleHash + functionHash
@@ -56,7 +62,13 @@ func Hash32(module, function string) ([]byte, []byte, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	const bits = 4
+	const (
+		rorBits = 4
+		rorSeed = rorBits + 1
+		rorKey  = rorBits + 2
+		rorMod  = rorBits + 3
+		rorFunc = rorBits + 4
+	)
 	var (
 		seedHash     uint32
 		keyHash      uint32
@@ -67,22 +79,22 @@ func Hash32(module, function string) ([]byte, []byte, error) {
 	hashKey := hash[:4]
 	seedHash = binary.LittleEndian.Uint32(hashKey)
 	for _, b := range hashKey {
-		seedHash = ror32(seedHash, bits+1)
+		seedHash = ror32(seedHash, rorSeed)
 		seedHash += uint32(b)
 	}
 	keyHash = seedHash
 	for _, b := range hashKey {
-		keyHash = ror32(keyHash, bits+2)
+		keyHash = ror32(keyHash, rorKey)
 		keyHash += uint32(b)
 	}
 	moduleHash = seedHash
 	for _, c := range toUnicode(module + "\x00") {
-		moduleHash = ror32(moduleHash, bits+3)
+		moduleHash = ror32(moduleHash, rorMod)
 		moduleHash += uint32(c)
 	}
 	functionHash = seedHash
 	for _, c := range function + "\x00" {
-		functionHash = ror32(functionHash, bits+4)
+		functionHash = ror32(functionHash, rorFunc)
 		functionHash += uint32(c)
 	}
 	apiHash := seedHash + keyHash + moduleHash + functionHash
