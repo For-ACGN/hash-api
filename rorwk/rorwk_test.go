@@ -11,9 +11,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestHash64(t *testing.T) {
+func TestHashAPI64(t *testing.T) {
 	t.Run("common", func(t *testing.T) {
-		hash, key, err := Hash64("kernel32.dll", "CreateThread")
+		hash, key, err := HashAPI64("kernel32.dll", "CreateThread")
 		require.NoError(t, err)
 		require.Len(t, hash, 8)
 		require.Len(t, key, 8)
@@ -29,16 +29,29 @@ func TestHash64(t *testing.T) {
 		pg := monkey.Patch(rand.Read, patch)
 		defer pg.Unpatch()
 
-		hash, key, err := Hash64("kernel32.dll", "CreateThread")
+		hash, key, err := HashAPI64("kernel32.dll", "CreateThread")
+		require.ErrorContains(t, err, "monkey error")
+		require.Nil(t, hash)
+		require.Nil(t, key)
+	})
+
+	t.Run("invalid key size", func(t *testing.T) {
+		patch := func(string, string, []byte) ([]byte, error) {
+			return nil, errors.New("monkey error")
+		}
+		pg := monkey.Patch(HashAPI64WithKey, patch)
+		defer pg.Unpatch()
+
+		hash, key, err := HashAPI64("kernel32.dll", "CreateThread")
 		require.ErrorContains(t, err, "monkey error")
 		require.Nil(t, hash)
 		require.Nil(t, key)
 	})
 }
 
-func TestHash32(t *testing.T) {
+func TestHashAPI32(t *testing.T) {
 	t.Run("common", func(t *testing.T) {
-		hash, key, err := Hash32("kernel32.dll", "CreateThread")
+		hash, key, err := HashAPI32("kernel32.dll", "CreateThread")
 		require.NoError(t, err)
 		require.Len(t, hash, 4)
 		require.Len(t, key, 4)
@@ -54,10 +67,51 @@ func TestHash32(t *testing.T) {
 		pg := monkey.Patch(rand.Read, patch)
 		defer pg.Unpatch()
 
-		hash, key, err := Hash32("kernel32.dll", "CreateThread")
+		hash, key, err := HashAPI32("kernel32.dll", "CreateThread")
 		require.ErrorContains(t, err, "monkey error")
 		require.Nil(t, hash)
 		require.Nil(t, key)
+	})
+
+	t.Run("invalid key size", func(t *testing.T) {
+		patch := func(string, string, []byte) ([]byte, error) {
+			return nil, errors.New("monkey error")
+		}
+		pg := monkey.Patch(HashAPI32WithKey, patch)
+		defer pg.Unpatch()
+
+		hash, key, err := HashAPI32("kernel32.dll", "CreateThread")
+		require.ErrorContains(t, err, "monkey error")
+		require.Nil(t, hash)
+		require.Nil(t, key)
+	})
+}
+
+func TestHashAPI64WithKey(t *testing.T) {
+	t.Run("module name-ASCII", func(t *testing.T) {
+
+	})
+
+	t.Run("module name-unicode", func(t *testing.T) {
+
+	})
+
+	t.Run("invalid key size", func(t *testing.T) {
+
+	})
+}
+
+func TestHashAPI32WithKey(t *testing.T) {
+	t.Run("module name-ASCII", func(t *testing.T) {
+
+	})
+
+	t.Run("module name-unicode", func(t *testing.T) {
+
+	})
+
+	t.Run("invalid key size", func(t *testing.T) {
+
 	})
 }
 
