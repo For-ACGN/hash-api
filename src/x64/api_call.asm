@@ -64,8 +64,8 @@ api_call:
   ; move arguments about api
   mov rcx, r9                           ; set rcx from r9
   mov rdx, [rbp+args_offset+0*8]        ; set rdx from stack
-  mov r8, [rbp+args_offset+1*8]         ; set r8 from stack
-  mov r9, [rbp+args_offset+2*8]         ; set r9 from stack
+  mov r8,  [rbp+args_offset+1*8]        ; set r8 from stack
+  mov r9,  [rbp+args_offset+2*8]        ; set r9 from stack
   ; call api function
   sub rsp, 32                           ; reserve stack
   call rax                              ; call the api address
