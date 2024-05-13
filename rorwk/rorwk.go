@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"strings"
+	"unicode"
 
 	"github.com/pkg/errors"
 )
@@ -40,8 +41,14 @@ func Hash64(module, function string) ([]byte, []byte, error) {
 		keyHash = ror64(keyHash, rorKey)
 		keyHash += uint64(b)
 	}
+	var modName string
+	if isASCII(module) {
+		modName = toUnicode(module + "\x00")
+	} else {
+		modName = module + "\x00\x00"
+	}
 	moduleHash = seedHash
-	for _, c := range toUnicode(module + "\x00") {
+	for _, c := range modName {
 		moduleHash = ror64(moduleHash, rorMod)
 		moduleHash += uint64(c)
 	}
@@ -87,8 +94,14 @@ func Hash32(module, function string) ([]byte, []byte, error) {
 		keyHash = ror32(keyHash, rorKey)
 		keyHash += uint32(b)
 	}
+	var modName string
+	if isASCII(module) {
+		modName = toUnicode(module + "\x00")
+	} else {
+		modName = module + "\x00\x00"
+	}
 	moduleHash = seedHash
-	for _, c := range toUnicode(module + "\x00") {
+	for _, c := range modName {
 		moduleHash = ror32(moduleHash, rorMod)
 		moduleHash += uint32(c)
 	}
@@ -125,18 +138,29 @@ func generateKey() ([]byte, error) {
 	return key, nil
 }
 
+func isASCII(s string) bool {
+	for _, r := range s {
+		if r > unicode.MaxASCII {
+			return false
+		}
+	}
+	return true
+}
+
+func toUnicode(s string) string {
+	u := strings.Builder{}
+	u.Grow(len(s) * 2)
+	for _, r := range strings.ToUpper(s) {
+		u.WriteRune(r)
+		u.WriteByte(0x00)
+	}
+	return u.String()
+}
+
 func ror64(value, bits uint64) uint64 {
 	return value>>bits | value<<(64-bits)
 }
 
 func ror32(value, bits uint32) uint32 {
 	return value>>bits | value<<(32-bits)
-}
-
-func toUnicode(s string) string {
-	var u string
-	for _, c := range strings.ToUpper(s) {
-		u += string(c) + "\x00"
-	}
-	return u
 }
