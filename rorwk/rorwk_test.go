@@ -3,6 +3,7 @@ package rorwk
 import (
 	"bytes"
 	"crypto/rand"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"testing"
@@ -88,30 +89,70 @@ func TestHashAPI32(t *testing.T) {
 }
 
 func TestHashAPI64WithKey(t *testing.T) {
-	t.Run("module name-ASCII", func(t *testing.T) {
+	key := make([]byte, 8)
+	binary.LittleEndian.PutUint64(key, 0x6C752CFACA603193)
 
+	t.Run("module name-ASCII", func(t *testing.T) {
+		hash, err := HashAPI64WithKey("kernel32.dll", "CreateThread", key)
+		require.NoError(t, err)
+
+		expected := uint64(0x2E1D2B4F2E3787DB)
+		actual := binary.LittleEndian.Uint64(hash)
+		require.Equal(t, expected, actual)
 	})
 
 	t.Run("module name-unicode", func(t *testing.T) {
+		var modName string
+		for _, r := range "kernel32.dll" {
+			modName += string(r)
+			modName += "\x00"
+		}
+		hash, err := HashAPI64WithKey(modName, "CreateThread", key)
+		require.NoError(t, err)
 
+		expected := uint64(0x2E1D2B4F2E3787DB)
+		actual := binary.LittleEndian.Uint64(hash)
+		require.Equal(t, expected, actual)
 	})
 
 	t.Run("invalid key size", func(t *testing.T) {
-
+		hash, err := HashAPI64WithKey("kernel32.dll", "CreateThread", nil)
+		require.EqualError(t, err, "invalid hash api key size")
+		require.Nil(t, hash)
 	})
 }
 
 func TestHashAPI32WithKey(t *testing.T) {
-	t.Run("module name-ASCII", func(t *testing.T) {
+	key := make([]byte, 4)
+	binary.LittleEndian.PutUint32(key, 0x1B09A7DE)
 
+	t.Run("module name-ASCII", func(t *testing.T) {
+		hash, err := HashAPI32WithKey("kernel32.dll", "CreateThread", key)
+		require.NoError(t, err)
+
+		expected := uint32(0xB088C622)
+		actual := binary.LittleEndian.Uint32(hash)
+		require.Equal(t, expected, actual)
 	})
 
 	t.Run("module name-unicode", func(t *testing.T) {
+		var modName string
+		for _, r := range "kernel32.dll" {
+			modName += string(r)
+			modName += "\x00"
+		}
+		hash, err := HashAPI32WithKey(modName, "CreateThread", key)
+		require.NoError(t, err)
 
+		expected := uint32(0xB088C622)
+		actual := binary.LittleEndian.Uint32(hash)
+		require.Equal(t, expected, actual)
 	})
 
 	t.Run("invalid key size", func(t *testing.T) {
-
+		hash, err := HashAPI32WithKey("kernel32.dll", "CreateThread", nil)
+		require.EqualError(t, err, "invalid hash api key size")
+		require.Nil(t, hash)
 	})
 }
 
