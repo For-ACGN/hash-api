@@ -15,6 +15,7 @@ var (
 	format   string
 	modName  string
 	funcName string
+	concise  bool
 )
 
 func init() {
@@ -28,14 +29,11 @@ func init() {
 	flag.StringVar(&format, "fmt", defaultFormat, "binary format: 32 or 64")
 	flag.StringVar(&modName, "mod", "kernel32.dll", "module name")
 	flag.StringVar(&funcName, "func", "WinExec", "function name")
+	flag.BoolVar(&concise, "conc", false, "print concise result for development")
 	flag.Parse()
 }
 
 func main() {
-	fmt.Println("module:  ", modName)
-	fmt.Println("function:", funcName)
-	fmt.Printf("format:   %s bit\n", format)
-	fmt.Println()
 	var (
 		numZero string
 		apiHash []byte
@@ -55,6 +53,16 @@ func main() {
 	if err != nil {
 		log.Fatalln("failed to calculate hash:", err)
 	}
+	if concise {
+		h := rorwk.BytesToUint64(apiHash)
+		k := rorwk.BytesToUint64(hashKey)
+		fmt.Printf("0x%0"+numZero+"X, "+"0x%0"+numZero+"X\n", h, k)
+		return
+	}
+	fmt.Println("module:  ", modName)
+	fmt.Println("function:", funcName)
+	fmt.Printf("format:   %s bit\n", format)
+	fmt.Println()
 	fmt.Printf("Hash: 0x%0"+numZero+"X\n", rorwk.BytesToUint64(apiHash))
 	fmt.Printf("Key:  0x%0"+numZero+"X\n", rorwk.BytesToUint64(hashKey))
 	fmt.Printf("Hash: %s\n", dumpBytesHex(apiHash))
