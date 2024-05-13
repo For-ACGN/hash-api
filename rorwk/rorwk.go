@@ -66,16 +66,22 @@ func HashAPI64WithKey(module, function string, key []byte) ([]byte, error) {
 		keyHash = ror64(keyHash, rorKey)
 		keyHash += uint64(b)
 	}
-	var modName string
-	if isASCII(module) {
-		modName = toUnicode(module + "\x00")
-	} else {
-		modName = module + "\x00\x00"
-	}
 	moduleHash = seedHash
-	for _, c := range modName {
-		moduleHash = ror64(moduleHash, rorMod)
-		moduleHash += uint64(c)
+	if isASCII(module) {
+		modName := toUnicode(module + "\x00")
+		for _, c := range modName {
+			moduleHash = ror64(moduleHash, rorMod)
+			moduleHash += uint64(c)
+		}
+	} else {
+		modName := []byte(module + "\x00\x00")
+		for _, c := range modName {
+			if c >= 'a' {
+				c -= 0x20
+			}
+			moduleHash = ror64(moduleHash, rorMod)
+			moduleHash += uint64(c)
+		}
 	}
 	functionHash = seedHash
 	for _, c := range function + "\x00" {
@@ -116,16 +122,22 @@ func HashAPI32WithKey(module, function string, key []byte) ([]byte, error) {
 		keyHash = ror32(keyHash, rorKey)
 		keyHash += uint32(b)
 	}
-	var modName string
-	if isASCII(module) {
-		modName = toUnicode(module + "\x00")
-	} else {
-		modName = module + "\x00\x00"
-	}
 	moduleHash = seedHash
-	for _, c := range modName {
-		moduleHash = ror32(moduleHash, rorMod)
-		moduleHash += uint32(c)
+	if isASCII(module) {
+		modName := toUnicode(module + "\x00")
+		for _, c := range modName {
+			moduleHash = ror32(moduleHash, rorMod)
+			moduleHash += uint32(c)
+		}
+	} else {
+		modName := []byte(module + "\x00\x00")
+		for _, c := range modName {
+			if c >= 'a' {
+				c -= 0x20
+			}
+			moduleHash = ror32(moduleHash, rorMod)
+			moduleHash += uint32(c)
+		}
 	}
 	functionHash = seedHash
 	for _, c := range function + "\x00" {
@@ -163,7 +175,7 @@ func generateKey() ([]byte, error) {
 
 func isASCII(s string) bool {
 	for _, r := range s {
-		if r > unicode.MaxASCII {
+		if r > unicode.MaxASCII || r == 0x00 {
 			return false
 		}
 	}
