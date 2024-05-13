@@ -15,6 +15,7 @@ var (
 	format   string
 	modName  string
 	funcName string
+	hexKey   string
 	concise  bool
 )
 
@@ -29,6 +30,7 @@ func init() {
 	flag.StringVar(&format, "fmt", defaultFormat, "binary format: 32 or 64")
 	flag.StringVar(&modName, "mod", "kernel32.dll", "module name")
 	flag.StringVar(&funcName, "func", "WinExec", "function name")
+	flag.StringVar(&hexKey, "key", "", "specific key, it must be hex format")
 	flag.BoolVar(&concise, "conc", false, "print concise result for development")
 	flag.Parse()
 }
@@ -40,13 +42,27 @@ func main() {
 		hashKey []byte
 		err     error
 	)
+	if hexKey != "" {
+		hashKey, err = hex.DecodeString(hexKey)
+		if err != nil {
+			log.Fatalln("invalid hash key:", err)
+		}
+	}
 	switch format {
-	case "32":
-		apiHash, hashKey, err = rorwk.Hash32(modName, funcName)
-		numZero = "8"
 	case "64":
-		apiHash, hashKey, err = rorwk.Hash64(modName, funcName)
+		if hashKey != nil {
+			apiHash, err = rorwk.HashAPI64WithKey(modName, funcName, hashKey)
+		} else {
+			apiHash, hashKey, err = rorwk.HashAPI64(modName, funcName)
+		}
 		numZero = "16"
+	case "32":
+		if hashKey != nil {
+			apiHash, err = rorwk.HashAPI32WithKey(modName, funcName, hashKey)
+		} else {
+			apiHash, hashKey, err = rorwk.HashAPI32(modName, funcName)
+		}
+		numZero = "8"
 	default:
 		log.Fatalln("invalid format:", format)
 	}
