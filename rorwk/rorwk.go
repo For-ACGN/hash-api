@@ -10,11 +10,38 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Hash64 is used to calculate hash for 64 bit.
-func Hash64(module, function string) ([]byte, []byte, error) {
+// HashAPI64 is used to calculate Windows API hash for 64 bit.
+func HashAPI64(module, function string) ([]byte, []byte, error) {
 	key, err := generateKey()
 	if err != nil {
 		return nil, nil, err
+	}
+	key = key[:8]
+	hash, err := HashAPI64WithKey(module, function, key)
+	if err != nil {
+		return nil, nil, err
+	}
+	return hash, key, nil
+}
+
+// HashAPI32 is used to calculate Windows API hash for 32 bit.
+func HashAPI32(module, function string) ([]byte, []byte, error) {
+	key, err := generateKey()
+	if err != nil {
+		return nil, nil, err
+	}
+	key = key[:4]
+	hash, err := HashAPI32WithKey(module, function, key)
+	if err != nil {
+		return nil, nil, err
+	}
+	return hash, key, nil
+}
+
+// HashAPI64WithKey is used to calculate Windows API hash for 64 bit with specific key.
+func HashAPI64WithKey(module, function string, key []byte) ([]byte, error) {
+	if len(key) != 8 {
+		return nil, errors.New("invalid hash api key size")
 	}
 	const (
 		rorBits = 8
@@ -29,15 +56,13 @@ func Hash64(module, function string) ([]byte, []byte, error) {
 		moduleHash   uint64
 		functionHash uint64
 	)
-	hash := sha256.Sum256(key)
-	hashKey := hash[:8]
-	seedHash = binary.LittleEndian.Uint64(hashKey)
-	for _, b := range hashKey {
+	seedHash = binary.LittleEndian.Uint64(key)
+	for _, b := range key {
 		seedHash = ror64(seedHash, rorSeed)
 		seedHash += uint64(b)
 	}
 	keyHash = seedHash
-	for _, b := range hashKey {
+	for _, b := range key {
 		keyHash = ror64(keyHash, rorKey)
 		keyHash += uint64(b)
 	}
@@ -58,16 +83,15 @@ func Hash64(module, function string) ([]byte, []byte, error) {
 		functionHash += uint64(c)
 	}
 	apiHash := seedHash + keyHash + moduleHash + functionHash
-	buf := make([]byte, 8)
-	binary.LittleEndian.PutUint64(buf, apiHash)
-	return buf, hashKey, nil
+	hash := make([]byte, 8)
+	binary.LittleEndian.PutUint64(hash, apiHash)
+	return hash, nil
 }
 
-// Hash32 is used to calculate hash for 32 bit.
-func Hash32(module, function string) ([]byte, []byte, error) {
-	key, err := generateKey()
-	if err != nil {
-		return nil, nil, err
+// HashAPI32WithKey is used to calculate Windows API hash for 32 bit with specific key.
+func HashAPI32WithKey(module, function string, key []byte) ([]byte, error) {
+	if len(key) != 4 {
+		return nil, errors.New("invalid hash api key size")
 	}
 	const (
 		rorBits = 4
@@ -82,15 +106,13 @@ func Hash32(module, function string) ([]byte, []byte, error) {
 		moduleHash   uint32
 		functionHash uint32
 	)
-	hash := sha256.Sum256(key)
-	hashKey := hash[:4]
-	seedHash = binary.LittleEndian.Uint32(hashKey)
-	for _, b := range hashKey {
+	seedHash = binary.LittleEndian.Uint32(key)
+	for _, b := range key {
 		seedHash = ror32(seedHash, rorSeed)
 		seedHash += uint32(b)
 	}
 	keyHash = seedHash
-	for _, b := range hashKey {
+	for _, b := range key {
 		keyHash = ror32(keyHash, rorKey)
 		keyHash += uint32(b)
 	}
@@ -111,9 +133,9 @@ func Hash32(module, function string) ([]byte, []byte, error) {
 		functionHash += uint32(c)
 	}
 	apiHash := seedHash + keyHash + moduleHash + functionHash
-	buf := make([]byte, 4)
-	binary.LittleEndian.PutUint32(buf, apiHash)
-	return buf, hashKey, nil
+	hash := make([]byte, 4)
+	binary.LittleEndian.PutUint32(hash, apiHash)
+	return hash, nil
 }
 
 // BytesToUint64 is used to convert hash or key bytes to uint64.
@@ -135,7 +157,8 @@ func generateKey() ([]byte, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to generate random key")
 	}
-	return key, nil
+	hash := sha256.Sum256(key)
+	return hash[:], nil
 }
 
 func isASCII(s string) bool {
