@@ -72,7 +72,7 @@ func main() {
 	if concise {
 		h := rorwk.BytesToUint64(apiHash)
 		k := rorwk.BytesToUint64(hashKey)
-		fmt.Printf("0x%0"+numZero+"X, "+"0x%0"+numZero+"X\n", h, k)
+		fmt.Printf("0x%0"+numZero+"X, "+"0x%0"+numZero+"X // %s\n", h, k, funcName)
 		return
 	}
 	fmt.Println("module:  ", modName)
