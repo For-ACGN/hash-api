@@ -10,7 +10,7 @@ import (
 
 	"golang.org/x/sys/windows"
 
-	"github.com/For-ACGN/hash-api/rorwk"
+	"github.com/RSSU-Shellcode/hash-api/rorwk"
 )
 
 func main() {
@@ -119,9 +119,9 @@ func calcHash(module, function string) (uintptr, uintptr) {
 	)
 	switch runtime.GOARCH {
 	case "amd64":
-		hash, key, err = rorwk.Hash64(module, function)
+		hash, key, err = rorwk.HashAPI64(module, function)
 	case "386":
-		hash, key, err = rorwk.Hash32(module, function)
+		hash, key, err = rorwk.HashAPI32(module, function)
 	default:
 		log.Fatalln("unsupported architecture:", runtime.GOARCH)
 	}
