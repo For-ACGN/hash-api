@@ -10,7 +10,7 @@ import (
 
 	"golang.org/x/sys/windows"
 
-	"github.com/RSSU-Shellcode/hash-api/rorwk"
+	"github.com/For-ACGN/hash-api/rorwk"
 )
 
 func main() {
