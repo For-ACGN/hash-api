@@ -43,7 +43,7 @@ entry:
 ; calculate shellcode entry address
 calc_entry_addr:
   pop rax                               ; get return address
-  lea rbx, [rax-flag_CEA]               ; calculate entry address.
+  lea rbx, [rax-flag_CEA]               ; calculate entry address
   push rax                              ; push return address
   ret                                   ; return to entry
 

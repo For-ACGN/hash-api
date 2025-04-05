@@ -38,7 +38,7 @@ entry:
 ; calculate shellcode entry address
 calc_entry_addr:
   pop eax                               ; get return address
-  lea ebx, [eax-flag_CEA]               ; calculate entry address.
+  lea ebx, [eax-flag_CEA]               ; calculate entry address
   push eax                              ; push return address
   ret                                   ; return to entry
 
