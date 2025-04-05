@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/RSSU-Shellcode/hash-api/rorwk"
+	"github.com/For-ACGN/hash-api/rorwk"
 )
 
 var (
