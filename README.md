@@ -1,4 +1,4 @@
-# hash_api
+# hash-api
 Find&amp;Call Windows API by hash+key.
 
 ## Example
