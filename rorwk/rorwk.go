@@ -10,107 +10,51 @@ import (
 	"github.com/pkg/errors"
 )
 
-// HashAPI64 is used to calculate Windows API hash for 64 bit.
-func HashAPI64(module, function string) ([]byte, []byte, error) {
-	key, err := generateKey()
-	if err != nil {
-		return nil, nil, err
-	}
-	key = key[:8]
-	hash, err := HashAPI64WithKey(module, function, key)
-	if err != nil {
-		return nil, nil, err
-	}
-	return hash, key, nil
-}
-
 // HashAPI32 is used to calculate Windows API hash for 32 bit.
-func HashAPI32(module, function string) ([]byte, []byte, error) {
+func HashAPI32(module, procedure string) ([]byte, []byte, []byte, error) {
 	key, err := generateKey()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	key = key[:4]
-	hash, err := HashAPI32WithKey(module, function, key)
+	mHash, pHash, err := HashAPI32WithKey(module, procedure, key)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
-	return hash, key, nil
+	return mHash, pHash, key, nil
 }
 
-// HashAPI64WithKey is used to calculate Windows API hash for 64 bit with specific key.
-func HashAPI64WithKey(module, function string, key []byte) ([]byte, error) {
-	if len(key) != 8 {
-		return nil, errors.New("invalid hash api key size")
+// HashAPI64 is used to calculate Windows API hash for 64 bit.
+func HashAPI64(module, procedure string) ([]byte, []byte, []byte, error) {
+	key, err := generateKey()
+	if err != nil {
+		return nil, nil, nil, err
 	}
-	const (
-		rorBits = 8
-		rorSeed = rorBits + 1
-		rorKey  = rorBits + 2
-		rorMod  = rorBits + 3
-		rorFunc = rorBits + 4
-	)
-	var (
-		seedHash     uint64
-		keyHash      uint64
-		moduleHash   uint64
-		functionHash uint64
-	)
-	seedHash = binary.LittleEndian.Uint64(key)
-	for _, b := range key {
-		seedHash = ror64(seedHash, rorSeed)
-		seedHash += uint64(b)
+	key = key[:8]
+	mHash, pHash, err := HashAPI64WithKey(module, procedure, key)
+	if err != nil {
+		return nil, nil, nil, err
 	}
-	keyHash = seedHash
-	for _, b := range key {
-		keyHash = ror64(keyHash, rorKey)
-		keyHash += uint64(b)
-	}
-	moduleHash = seedHash
-	if isASCII(module) {
-		modName := toUnicode(module + "\x00")
-		for _, c := range modName {
-			moduleHash = ror64(moduleHash, rorMod)
-			moduleHash += uint64(c)
-		}
-	} else {
-		modName := []byte(module + "\x00\x00")
-		for _, c := range modName {
-			if c >= 'a' {
-				c -= 0x20
-			}
-			moduleHash = ror64(moduleHash, rorMod)
-			moduleHash += uint64(c)
-		}
-	}
-	functionHash = seedHash
-	for _, c := range function + "\x00" {
-		functionHash = ror64(functionHash, rorFunc)
-		functionHash += uint64(c)
-	}
-	apiHash := seedHash + keyHash + moduleHash + functionHash
-	hash := make([]byte, 8)
-	binary.LittleEndian.PutUint64(hash, apiHash)
-	return hash, nil
+	return mHash, pHash, key, nil
 }
 
 // HashAPI32WithKey is used to calculate Windows API hash for 32 bit with specific key.
-func HashAPI32WithKey(module, function string, key []byte) ([]byte, error) {
+func HashAPI32WithKey(module, procedure string, key []byte) ([]byte, []byte, error) {
 	if len(key) != 4 {
-		return nil, errors.New("invalid hash api key size")
+		return nil, nil, errors.New("invalid hash api key size")
 	}
 	const (
 		rorBits = 4
 		rorSeed = rorBits + 1
 		rorKey  = rorBits + 2
 		rorMod  = rorBits + 3
-		rorFunc = rorBits + 4
+		rorProc = rorBits + 4
 	)
 	var (
-		seedHash     uint32
-		keyHash      uint32
-		moduleHash   uint32
-		functionHash uint32
+		seedHash uint32
+		keyHash  uint32
+		modHash  uint32
+		procHash uint32
 	)
 	seedHash = binary.LittleEndian.Uint32(key)
 	for _, b := range key {
@@ -122,32 +66,94 @@ func HashAPI32WithKey(module, function string, key []byte) ([]byte, error) {
 		keyHash = ror32(keyHash, rorKey)
 		keyHash += uint32(b)
 	}
-	moduleHash = seedHash
+	modHash = seedHash
 	if isASCII(module) {
-		modName := toUnicode(module + "\x00")
+		modName := toUnicode(module)
 		for _, c := range modName {
-			moduleHash = ror32(moduleHash, rorMod)
-			moduleHash += uint32(c)
+			modHash = ror32(modHash, rorMod)
+			modHash += uint32(c)
 		}
 	} else {
-		modName := []byte(module + "\x00\x00")
+		modName := []byte(module)
 		for _, c := range modName {
 			if c >= 'a' {
 				c -= 0x20
 			}
-			moduleHash = ror32(moduleHash, rorMod)
-			moduleHash += uint32(c)
+			modHash = ror32(modHash, rorMod)
+			modHash += uint32(c)
 		}
 	}
-	functionHash = seedHash
-	for _, c := range function + "\x00" {
-		functionHash = ror32(functionHash, rorFunc)
-		functionHash += uint32(c)
+	modHash += seedHash + keyHash
+	procHash = seedHash
+	for _, c := range procedure {
+		procHash = ror32(procHash, rorProc)
+		procHash += uint32(c)
 	}
-	apiHash := seedHash + keyHash + moduleHash + functionHash
-	hash := make([]byte, 4)
-	binary.LittleEndian.PutUint32(hash, apiHash)
-	return hash, nil
+	procHash += seedHash + keyHash
+	mHash := make([]byte, 4)
+	binary.LittleEndian.PutUint32(mHash, modHash)
+	pHash := make([]byte, 4)
+	binary.LittleEndian.PutUint32(pHash, procHash)
+	return mHash, pHash, nil
+}
+
+// HashAPI64WithKey is used to calculate Windows API hash for 64 bit with specific key.
+func HashAPI64WithKey(module, procedure string, key []byte) ([]byte, []byte, error) {
+	if len(key) != 8 {
+		return nil, nil, errors.New("invalid hash api key size")
+	}
+	const (
+		rorBits = 8
+		rorSeed = rorBits + 1
+		rorKey  = rorBits + 2
+		rorMod  = rorBits + 3
+		rorProc = rorBits + 4
+	)
+	var (
+		seedHash uint64
+		keyHash  uint64
+		modHash  uint64
+		procHash uint64
+	)
+	seedHash = binary.LittleEndian.Uint64(key)
+	for _, b := range key {
+		seedHash = ror64(seedHash, rorSeed)
+		seedHash += uint64(b)
+	}
+	keyHash = seedHash
+	for _, b := range key {
+		keyHash = ror64(keyHash, rorKey)
+		keyHash += uint64(b)
+	}
+	modHash = seedHash
+	if isASCII(module) {
+		modName := toUnicode(module)
+		for _, c := range modName {
+			modHash = ror64(modHash, rorMod)
+			modHash += uint64(c)
+		}
+	} else {
+		modName := []byte(module)
+		for _, c := range modName {
+			if c >= 'a' {
+				c -= 0x20
+			}
+			modHash = ror64(modHash, rorMod)
+			modHash += uint64(c)
+		}
+	}
+	modHash += seedHash + keyHash
+	procHash = seedHash
+	for _, c := range procedure {
+		procHash = ror64(procHash, rorProc)
+		procHash += uint64(c)
+	}
+	procHash += seedHash + keyHash
+	mHash := make([]byte, 8)
+	binary.LittleEndian.PutUint64(mHash, modHash)
+	pHash := make([]byte, 8)
+	binary.LittleEndian.PutUint64(pHash, procHash)
+	return mHash, pHash, nil
 }
 
 // BytesToUint64 is used to convert hash or key bytes to uint64.
@@ -192,10 +198,10 @@ func toUnicode(s string) string {
 	return u.String()
 }
 
-func ror64(value, bits uint64) uint64 {
-	return value>>bits | value<<(64-bits)
-}
-
 func ror32(value, bits uint32) uint32 {
 	return value>>bits | value<<(32-bits)
+}
+
+func ror64(value, bits uint64) uint64 {
+	return value>>bits | value<<(64-bits)
 }
