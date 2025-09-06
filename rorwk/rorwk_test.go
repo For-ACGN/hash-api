@@ -40,8 +40,8 @@ func TestHashAPI32(t *testing.T) {
 	})
 
 	t.Run("invalid key size", func(t *testing.T) {
-		patch := func(string, string, []byte) ([]byte, error) {
-			return nil, errors.New("monkey error")
+		patch := func(string, string, []byte) ([]byte, []byte, error) {
+			return nil, nil, errors.New("monkey error")
 		}
 		pg := monkey.Patch(HashAPI32WithKey, patch)
 		defer pg.Unpatch()
@@ -82,8 +82,8 @@ func TestHashAPI64(t *testing.T) {
 	})
 
 	t.Run("invalid key size", func(t *testing.T) {
-		patch := func(string, string, []byte) ([]byte, error) {
-			return nil, errors.New("monkey error")
+		patch := func(string, string, []byte) ([]byte, []byte, error) {
+			return nil, nil, errors.New("monkey error")
 		}
 		pg := monkey.Patch(HashAPI64WithKey, patch)
 		defer pg.Unpatch()
@@ -108,10 +108,9 @@ func TestHashAPI32WithKey(t *testing.T) {
 		actual := binary.LittleEndian.Uint32(mHash)
 		require.Equal(t, expected, actual)
 
-		expected = uint32(0x42509A1C)
-		actual = binary.LittleEndian.Uint32(mHash)
+		expected = uint32(0x3CA3C21A)
+		actual = binary.LittleEndian.Uint32(pHash)
 		require.Equal(t, expected, actual)
-
 	})
 
 	t.Run("module name-unicode", func(t *testing.T) {
@@ -120,31 +119,40 @@ func TestHashAPI32WithKey(t *testing.T) {
 			modName += string(r)
 			modName += "\x00"
 		}
-		hash, err := HashAPI32WithKey(modName, "CreateThread", key)
+		mHash, pHash, err := HashAPI32WithKey(modName, "WinExec", key)
 		require.NoError(t, err)
 
-		expected := uint32(0xB088C622)
-		actual := binary.LittleEndian.Uint32(hash)
+		expected := uint32(0x42509A1C)
+		actual := binary.LittleEndian.Uint32(mHash)
+		require.Equal(t, expected, actual)
+
+		expected = uint32(0x3CA3C21A)
+		actual = binary.LittleEndian.Uint32(pHash)
 		require.Equal(t, expected, actual)
 	})
 
 	t.Run("invalid key size", func(t *testing.T) {
-		hash, err := HashAPI32WithKey("kernel32.dll", "CreateThread", nil)
+		mHash, pHash, err := HashAPI32WithKey("kernel32.dll", "WinExec", nil)
 		require.EqualError(t, err, "invalid hash api key size")
-		require.Nil(t, hash)
+		require.Nil(t, mHash)
+		require.Nil(t, pHash)
 	})
 }
 
 func TestHashAPI64WithKey(t *testing.T) {
 	key := make([]byte, 8)
-	binary.LittleEndian.PutUint64(key, 0x6C752CFACA603193)
+	binary.LittleEndian.PutUint64(key, 0x7A61A1C72F518C54)
 
 	t.Run("module name-ASCII", func(t *testing.T) {
-		hash, err := HashAPI64WithKey("kernel32.dll", "CreateThread", key)
+		mHash, pHash, err := HashAPI64WithKey("kernel32.dll", "WinExec", key)
 		require.NoError(t, err)
 
-		expected := uint64(0x2E1D2B4F2E3787DB)
-		actual := binary.LittleEndian.Uint64(hash)
+		expected := uint64(0x2A5175AD1A0CECBC)
+		actual := binary.LittleEndian.Uint64(mHash)
+		require.Equal(t, expected, actual)
+
+		expected = uint64(0x6596B31A1F68D830)
+		actual = binary.LittleEndian.Uint64(pHash)
 		require.Equal(t, expected, actual)
 	})
 
@@ -154,18 +162,23 @@ func TestHashAPI64WithKey(t *testing.T) {
 			modName += string(r)
 			modName += "\x00"
 		}
-		hash, err := HashAPI64WithKey(modName, "CreateThread", key)
+		mHash, pHash, err := HashAPI64WithKey(modName, "WinExec", key)
 		require.NoError(t, err)
 
-		expected := uint64(0x2E1D2B4F2E3787DB)
-		actual := binary.LittleEndian.Uint64(hash)
+		expected := uint64(0x2A5175AD1A0CECBC)
+		actual := binary.LittleEndian.Uint64(mHash)
+		require.Equal(t, expected, actual)
+
+		expected = uint64(0x6596B31A1F68D830)
+		actual = binary.LittleEndian.Uint64(pHash)
 		require.Equal(t, expected, actual)
 	})
 
 	t.Run("invalid key size", func(t *testing.T) {
-		hash, err := HashAPI64WithKey("kernel32.dll", "CreateThread", nil)
+		mHash, pHash, err := HashAPI64WithKey("kernel32.dll", "WinExec", nil)
 		require.EqualError(t, err, "invalid hash api key size")
-		require.Nil(t, hash)
+		require.Nil(t, mHash)
+		require.Nil(t, pHash)
 	})
 }
 
