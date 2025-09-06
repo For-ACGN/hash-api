@@ -12,53 +12,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestHashAPI64(t *testing.T) {
-	t.Run("common", func(t *testing.T) {
-		hash, key, err := HashAPI64("kernel32.dll", "CreateThread")
-		require.NoError(t, err)
-		require.Len(t, hash, 8)
-		require.Len(t, key, 8)
-
-		fmt.Println("hash:", hash)
-		fmt.Println("key:", key)
-	})
-
-	t.Run("failed to generate key", func(t *testing.T) {
-		patch := func(b []byte) (n int, err error) {
-			return 0, errors.New("monkey error")
-		}
-		pg := monkey.Patch(rand.Read, patch)
-		defer pg.Unpatch()
-
-		hash, key, err := HashAPI64("kernel32.dll", "CreateThread")
-		require.ErrorContains(t, err, "monkey error")
-		require.Nil(t, hash)
-		require.Nil(t, key)
-	})
-
-	t.Run("invalid key size", func(t *testing.T) {
-		patch := func(string, string, []byte) ([]byte, error) {
-			return nil, errors.New("monkey error")
-		}
-		pg := monkey.Patch(HashAPI64WithKey, patch)
-		defer pg.Unpatch()
-
-		hash, key, err := HashAPI64("kernel32.dll", "CreateThread")
-		require.ErrorContains(t, err, "monkey error")
-		require.Nil(t, hash)
-		require.Nil(t, key)
-	})
-}
-
 func TestHashAPI32(t *testing.T) {
 	t.Run("common", func(t *testing.T) {
-		hash, key, err := HashAPI32("kernel32.dll", "CreateThread")
+		mHash, pHash, hKey, err := HashAPI32("kernel32.dll", "WinExec")
 		require.NoError(t, err)
-		require.Len(t, hash, 4)
-		require.Len(t, key, 4)
+		require.Len(t, mHash, 4)
+		require.Len(t, pHash, 4)
+		require.Len(t, hKey, 4)
 
-		fmt.Println("hash:", hash)
-		fmt.Println("key:", key)
+		fmt.Println("module hash:   ", mHash)
+		fmt.Println("procedure hash:", pHash)
+		fmt.Println("hash key:      ", hKey)
 	})
 
 	t.Run("failed to generate key", func(t *testing.T) {
@@ -68,10 +32,11 @@ func TestHashAPI32(t *testing.T) {
 		pg := monkey.Patch(rand.Read, patch)
 		defer pg.Unpatch()
 
-		hash, key, err := HashAPI32("kernel32.dll", "CreateThread")
+		mHash, pHash, hKey, err := HashAPI32("kernel32.dll", "WinExec")
 		require.ErrorContains(t, err, "monkey error")
-		require.Nil(t, hash)
-		require.Nil(t, key)
+		require.Nil(t, mHash)
+		require.Nil(t, pHash)
+		require.Nil(t, hKey)
 	})
 
 	t.Run("invalid key size", func(t *testing.T) {
@@ -81,10 +46,92 @@ func TestHashAPI32(t *testing.T) {
 		pg := monkey.Patch(HashAPI32WithKey, patch)
 		defer pg.Unpatch()
 
-		hash, key, err := HashAPI32("kernel32.dll", "CreateThread")
+		mHash, pHash, hKey, err := HashAPI32("kernel32.dll", "WinExec")
 		require.ErrorContains(t, err, "monkey error")
+		require.Nil(t, mHash)
+		require.Nil(t, pHash)
+		require.Nil(t, hKey)
+	})
+}
+
+func TestHashAPI64(t *testing.T) {
+	t.Run("common", func(t *testing.T) {
+		mHash, pHash, hKey, err := HashAPI64("kernel32.dll", "WinExec")
+		require.NoError(t, err)
+		require.Len(t, mHash, 8)
+		require.Len(t, pHash, 8)
+		require.Len(t, hKey, 8)
+
+		fmt.Println("module hash:   ", mHash)
+		fmt.Println("procedure hash:", pHash)
+		fmt.Println("hash key:      ", hKey)
+	})
+
+	t.Run("failed to generate key", func(t *testing.T) {
+		patch := func(b []byte) (n int, err error) {
+			return 0, errors.New("monkey error")
+		}
+		pg := monkey.Patch(rand.Read, patch)
+		defer pg.Unpatch()
+
+		mHash, pHash, hKey, err := HashAPI64("kernel32.dll", "WinExec")
+		require.ErrorContains(t, err, "monkey error")
+		require.Nil(t, mHash)
+		require.Nil(t, pHash)
+		require.Nil(t, hKey)
+	})
+
+	t.Run("invalid key size", func(t *testing.T) {
+		patch := func(string, string, []byte) ([]byte, error) {
+			return nil, errors.New("monkey error")
+		}
+		pg := monkey.Patch(HashAPI64WithKey, patch)
+		defer pg.Unpatch()
+
+		mHash, pHash, hKey, err := HashAPI64("kernel32.dll", "WinExec")
+		require.ErrorContains(t, err, "monkey error")
+		require.Nil(t, mHash)
+		require.Nil(t, pHash)
+		require.Nil(t, hKey)
+	})
+}
+
+func TestHashAPI32WithKey(t *testing.T) {
+	key := make([]byte, 4)
+	binary.LittleEndian.PutUint32(key, 0xCADE960B)
+
+	t.Run("module name-ASCII", func(t *testing.T) {
+		mHash, pHash, err := HashAPI32WithKey("kernel32.dll", "WinExec", key)
+		require.NoError(t, err)
+
+		expected := uint32(0x42509A1C)
+		actual := binary.LittleEndian.Uint32(mHash)
+		require.Equal(t, expected, actual)
+
+		expected = uint32(0x42509A1C)
+		actual = binary.LittleEndian.Uint32(mHash)
+		require.Equal(t, expected, actual)
+
+	})
+
+	t.Run("module name-unicode", func(t *testing.T) {
+		var modName string
+		for _, r := range "kernel32.dll" {
+			modName += string(r)
+			modName += "\x00"
+		}
+		hash, err := HashAPI32WithKey(modName, "CreateThread", key)
+		require.NoError(t, err)
+
+		expected := uint32(0xB088C622)
+		actual := binary.LittleEndian.Uint32(hash)
+		require.Equal(t, expected, actual)
+	})
+
+	t.Run("invalid key size", func(t *testing.T) {
+		hash, err := HashAPI32WithKey("kernel32.dll", "CreateThread", nil)
+		require.EqualError(t, err, "invalid hash api key size")
 		require.Nil(t, hash)
-		require.Nil(t, key)
 	})
 }
 
@@ -117,40 +164,6 @@ func TestHashAPI64WithKey(t *testing.T) {
 
 	t.Run("invalid key size", func(t *testing.T) {
 		hash, err := HashAPI64WithKey("kernel32.dll", "CreateThread", nil)
-		require.EqualError(t, err, "invalid hash api key size")
-		require.Nil(t, hash)
-	})
-}
-
-func TestHashAPI32WithKey(t *testing.T) {
-	key := make([]byte, 4)
-	binary.LittleEndian.PutUint32(key, 0x1B09A7DE)
-
-	t.Run("module name-ASCII", func(t *testing.T) {
-		hash, err := HashAPI32WithKey("kernel32.dll", "CreateThread", key)
-		require.NoError(t, err)
-
-		expected := uint32(0xB088C622)
-		actual := binary.LittleEndian.Uint32(hash)
-		require.Equal(t, expected, actual)
-	})
-
-	t.Run("module name-unicode", func(t *testing.T) {
-		var modName string
-		for _, r := range "kernel32.dll" {
-			modName += string(r)
-			modName += "\x00"
-		}
-		hash, err := HashAPI32WithKey(modName, "CreateThread", key)
-		require.NoError(t, err)
-
-		expected := uint32(0xB088C622)
-		actual := binary.LittleEndian.Uint32(hash)
-		require.Equal(t, expected, actual)
-	})
-
-	t.Run("invalid key size", func(t *testing.T) {
-		hash, err := HashAPI32WithKey("kernel32.dll", "CreateThread", nil)
 		require.EqualError(t, err, "invalid hash api key size")
 		require.Nil(t, hash)
 	})
