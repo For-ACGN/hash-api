@@ -21,11 +21,12 @@ func main() {
 
 func testFindAPI() {
 	findAPI := loadShellcode("find_api")
-	hash, key := calcHash("kernel32.dll", "ReadProcessMemory")
-	fmt.Printf("hash: 0x%08X\n", hash)
-	fmt.Printf("key:  0x%08X\n", key)
+	mHash, pHash, hKey := calcHash("kernel32.dll", "ReadProcessMemory")
+	fmt.Printf("Module Hash:    0x%08X\n", mHash)
+	fmt.Printf("Procedure Hash: 0x%08X\n", pHash)
+	fmt.Printf("Hash Key:       0x%08X\n", hKey)
 
-	apiAddr, _, err := syscall.SyscallN(findAPI, hash, key)
+	apiAddr, _, err := syscall.SyscallN(findAPI, mHash, pHash, hKey)
 	fmt.Println(err)
 	proc := windows.NewLazySystemDLL("kernel32.dll").NewProc("ReadProcessMemory").Addr()
 	if proc != apiAddr {
@@ -33,15 +34,15 @@ func testFindAPI() {
 	}
 
 	// api not found
-	hash, key = calcHash("invalid.dll", "ReadProcessMemory")
-	apiAddr, _, err = syscall.SyscallN(findAPI, hash, key)
+	mHash, pHash, hKey = calcHash("invalid.dll", "ReadProcessMemory")
+	apiAddr, _, err = syscall.SyscallN(findAPI, mHash, pHash, hKey)
 	fmt.Println(err)
 	if apiAddr != 0 {
 		log.Fatalln("unexpected return value:", apiAddr)
 	}
 
-	hash, key = calcHash("kernel32.dll", "Invalid")
-	apiAddr, _, err = syscall.SyscallN(findAPI, hash, key)
+	mHash, pHash, hKey = calcHash("kernel32.dll", "Invalid")
+	apiAddr, _, err = syscall.SyscallN(findAPI, mHash, pHash, hKey)
 	fmt.Println(err)
 	if apiAddr != 0 {
 		log.Fatalln("unexpected return value:", apiAddr)
@@ -50,12 +51,14 @@ func testFindAPI() {
 
 func testAPICall() {
 	apiCall := loadShellcode("api_call")
-	hash, key := calcHash("kernel32.dll", "CreateThread")
-	fmt.Printf("hash: 0x%08X\n", hash)
-	fmt.Printf("key:  0x%08X\n", key)
+	mHash, pHash, hKey := calcHash("kernel32.dll", "CreateThread")
+	fmt.Printf("Module Hash:    0x%08X\n", mHash)
+	fmt.Printf("Procedure Hash: 0x%08X\n", pHash)
+	fmt.Printf("Hash Key:       0x%08X\n", hKey)
+
 	var threadID uint32
 	handle, _, err := syscall.SyscallN(
-		apiCall, hash, key, 6,
+		apiCall, mHash, pHash, hKey, 6,
 		0, 0, apiCall, 0, windows.CREATE_SUSPENDED,
 		uintptr(unsafe.Pointer(&threadID)),
 	)
@@ -72,15 +75,21 @@ func testAPICall() {
 	fmt.Println("thread id:", threadID)
 
 	// api not found
-	hash, key = calcHash("invalid.dll", "ReadProcessMemory")
-	ret, _, err := syscall.SyscallN(apiCall, hash, key, 5, 0, 0, 0, 0, 0)
+	mHash, pHash, hKey = calcHash("invalid.dll", "ReadProcessMemory")
+	ret, _, err := syscall.SyscallN(
+		apiCall, mHash, pHash, hKey, 5,
+		0, 0, 0, 0, 0,
+	)
 	fmt.Println(err)
 	if ret != 0 {
 		log.Fatalln("unexpected return value:", ret)
 	}
 
-	hash, key = calcHash("kernel32.dll", "Invalid")
-	ret, _, err = syscall.SyscallN(apiCall, hash, key, 5, 0, 0, 0, 0, 0)
+	mHash, pHash, hKey = calcHash("kernel32.dll", "Invalid")
+	ret, _, err = syscall.SyscallN(
+		apiCall, mHash, pHash, hKey, 5,
+		0, 0, 0, 0, 0,
+	)
 	fmt.Println(err)
 	if ret != 0 {
 		log.Fatalln("unexpected return value:", ret)
@@ -111,24 +120,26 @@ func loadShellcode(name string) uintptr {
 	return scAddr
 }
 
-func calcHash(module, function string) (uintptr, uintptr) {
+func calcHash(module, function string) (uintptr, uintptr, uintptr) {
 	var (
-		hash []byte
-		key  []byte
-		err  error
+		mHash []byte
+		pHash []byte
+		hKey  []byte
+		err   error
 	)
 	switch runtime.GOARCH {
 	case "amd64":
-		hash, key, err = rorwk.HashAPI64(module, function)
+		mHash, pHash, hKey, err = rorwk.HashAPI64(module, function)
 	case "386":
-		hash, key, err = rorwk.HashAPI32(module, function)
+		mHash, pHash, hKey, err = rorwk.HashAPI32(module, function)
 	default:
 		log.Fatalln("unsupported architecture:", runtime.GOARCH)
 	}
 	checkError(err)
-	h := uintptr(rorwk.BytesToUint64(hash))
-	k := uintptr(rorwk.BytesToUint64(key))
-	return h, k
+	m := uintptr(rorwk.BytesToUint64(mHash))
+	p := uintptr(rorwk.BytesToUint64(pHash))
+	k := uintptr(rorwk.BytesToUint64(hKey))
+	return m, p, k
 }
 
 func checkError(err error) {
