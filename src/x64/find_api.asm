@@ -32,21 +32,20 @@ section .data
 find_api:
   ; store context
   push rbx                              ; store rbx
-  push rbp                              ; store rbp
   push rsi                              ; store rsi
   push r12                              ; store module name hash
   push r13                              ; store procedure name hash
-  push r14                              ; store hash key
 
   ; save arguments
   mov r12, rcx                          ; save module name hash
   mov r13, rdx                          ; save procedure name hash
-  mov r14, r8                           ; save hash key
+
+  ; for calculate seed and key hash
+  push r8                               ; push hash key to stack
+  mov rsi, rsp                          ; set address for load string byte
 
   ; calculate seed hash
-  mov r10, r14                          ; initialize r10 for store seed hash
-  push r14                              ; push hash key to stack
-  mov rsi, rsp                          ; set address for load string byte
+  mov r10, r8                           ; initialize r10 for store seed hash
   xor rcx, rcx                          ; clear rcx
   mov cl, key_size                      ; set the loop times with hash key
  read_hash_key_0:                       ;
@@ -55,12 +54,9 @@ find_api:
   ror r10, ror_seed                     ; rotate right the hash value
   add r10, rax                          ; add the next byte of hash key
   loop read_hash_key_0                  ; loop until read hash key finish
-  pop r14                               ; restore stack
 
   ; calculate key hash
   mov r11, r10                          ; initialize r11 for store key hash
-  push r14                              ; push hash key to stack
-  mov rsi, rsp                          ; set address for load string byte
   mov cl, key_size                      ; set the loop times with hash key
  read_hash_key_1:                       ;
   xor rax, rax                          ; clear rax
@@ -68,7 +64,8 @@ find_api:
   ror r11, ror_key                      ; rotate right the hash value
   add r11, rax                          ; add the next byte of hash key
   loop read_hash_key_1                  ; loop until read hash key finish
-  pop r14                               ; restore stack
+
+  pop r8                                ; restore stack
 
   ; get the first module
   mov rbx, [gs:0x30]                    ; get a pointer to the TEB
@@ -78,11 +75,9 @@ find_api:
   call get_next_module                  ; begin find module and function
 
   ; restore context
-  pop r14                               ; restore r14
   pop r13                               ; restore r13
   pop r12                               ; restore r12
   pop rsi                               ; restore rsi
-  pop rbp                               ; restore rbp
   pop rbx                               ; restore rbx
   ret                                   ; return to the caller
 
@@ -94,7 +89,7 @@ get_next_module:
   movzx rcx, word [rbx+74]              ; set rcx to the length we want to check
   sub rcx, 2                            ; set the loop times
 
- read_module_name:                      ;
+ read_module_name:                      ; calculate module name hash
   xor rax, rax                          ; clear rax
   lodsb                                 ; read in the next byte of the name
   cmp al, 'a'                           ; some versions of Windows use lower case module names
@@ -104,6 +99,12 @@ get_next_module:
   ror r9, ror_mod                       ; rotate right our hash value
   add r9, rax                           ; add the next byte of the name
   loop read_module_name                 ; loop until read module name finish
+
+  ; check the module name hash
+  add r9, r10                           ; add seed hash to module name hash
+  add r9, r11                           ; add key hash to module name hash
+  cmp r9, r12                           ; compare the module name hash
+  jne get_next_mod_3
 
   ; proceed to iterate the export address table(EAT)
   push rbx                              ; save the current position in the module list for later
@@ -127,37 +128,37 @@ get_next_module:
   mov edx, dword [rax+32]               ; get the RVA of the function names
   add rdx, rbx                          ; add the modules base address
 
-  get_next_func:                        ; computing the module hash + function hash
+ get_next_func:                         ; calculate procedure name hash
   jrcxz get_next_mod_1                  ; when we reach the start of the EAT, process the next module
   dec rcx                               ; decrement the function name counter
   mov esi, dword [rdx+rcx*4]            ; get RVA of next module name
   add rsi, rbx                          ; add the modules base address
-  mov r15, r12                          ; initialize r15 for store module name hash
+  mov r9, r10                           ; initialize r9 for store procedure name hash
 
-  read_func_name:                       ; and compare it to the one we want
+ read_func_name:                        ; and compare it to the one we want
   xor rax, rax                          ; clear rax
   lodsb                                 ; read in the next byte of the ASCII function name
-  ror r15, ror_proc                     ; rotate right our hash value
-  add r15, rax                          ; add the next byte of the name
+  ror r9, ror_proc                      ; rotate right our hash value
+  add r9, rax                           ; add the next byte of the name
   cmp al, ah                            ; compare AL (the next byte from the name) to AH (null)
   jne read_func_name                    ; if we have not reached the null terminator, continue
 
-  ; calculate the finally hash
-  add r15, r14                          ; add the current module hash to the function hash
-  add r15, r13                          ; add the key hash to the function hash
-  add r15, r12                          ; add the seed hash to the function hash
-  cmp r8, r15                           ; compare the hash to the one we are searching for
-  jnz get_next_func                     ; go compute the next function hash if we have not found it
+  ; check the procedure name hash
+  add r9, r10                           ; add seed hash to procedure name hash
+  add r9, r11                           ; add key hash to procedure name hash
+  cmp r9, r13                           ; compare the procedure name hash
+  jne get_next_func                     ; go compute the next function hash if we have not found it
   jmp found_func                        ; if found, fix up stack, return the function address
 
-  get_next_mod_1:                       ;
+ get_next_mod_1:                        ;
   pop rax                               ; pop off the current (now the previous) modules EAT
-  get_next_mod_2:                       ;
+ get_next_mod_2:                        ;
   pop rbx                               ; restore our position in the module list
+ get_next_mod_3:
   mov rbx, [rbx]                        ; get the next module
   jmp get_next_module                   ; process the next module
 
-  found_func:                           ;
+ found_func:                            ;
   pop rax                               ; restore the current modules EAT
   mov edx, dword [rax+36]               ; get the ordinal table RVA
   add rdx, rbx                          ; add the modules base address
@@ -168,6 +169,6 @@ get_next_module:
   add rax, rbx                          ; add the modules base address to get the functions actual VA
   pop rdx                               ; clear off the current position in the module list
   ret                                   ; return to the caller
-  not_found_func:                       ;
+ not_found_func:                        ;
   xor rax, rax                          ; clear the rax and it is the return value
   ret                                   ; return to the caller
