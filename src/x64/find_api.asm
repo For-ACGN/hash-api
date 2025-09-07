@@ -20,88 +20,89 @@
 [BITS 64]
 
 section .data
-  hash_key_size EQU 8                   ; the hash key byte slice length
-
+  key_size EQU 8                        ; the hash key byte slice length
   ror_bit  EQU 8                        ; the number of the base ror bit
   ror_seed EQU ror_bit+1                ; the number of the seed hash ror bit
   ror_key  EQU ror_bit+2                ; the number of the hash key ror bit
   ror_mod  EQU ror_bit+3                ; the number of the module name hash ror bit
-  ror_func EQU ror_bit+4                ; the number of the function name hash ror bit
+  ror_proc EQU ror_bit+4                ; the number of the procedure name hash ror bit
 
-; [input]  [rcx = hash], [rdx = hash key].
-; [output] [rax = api function address].
+; input:  [rcx = module hash], [rdx = procedure hash], [r8 = hash key].
+; output: [rax = api function address].
 find_api:
   ; store context
-  push rsi                              ; store rsi
   push rbx                              ; store rbx
-  push r12                              ; store seed hash
-  push r13                              ; store key hash
-  push r14                              ; store module name hash
-  push r15                              ; store function name hash
+  push rbp                              ; store rbp
+  push rsi                              ; store rsi
+  push r12                              ; store module name hash
+  push r13                              ; store procedure name hash
+  push r14                              ; store hash key
 
-  ; store arguments
-  mov r8, rcx                           ; function hash
-  mov r9, rdx                           ; hash key
+  ; save arguments
+  mov r12, rcx                          ; save module name hash
+  mov r13, rdx                          ; save procedure name hash
+  mov r14, r8                           ; save hash key
 
   ; calculate seed hash
-  xor rcx, rcx                          ; clear rcx
-  mov r12, r9                           ; initialize r12 for store seed hash
-  push r9                               ; push hash key to stack
+  mov r10, r14                          ; initialize r10 for store seed hash
+  push r14                              ; push hash key to stack
   mov rsi, rsp                          ; set address for load string byte
-  mov cl, hash_key_size                 ; set the loop times with hash key
-  read_hash_key_0:                      ;
+  xor rcx, rcx                          ; clear rcx
+  mov cl, key_size                      ; set the loop times with hash key
+ read_hash_key_0:                       ;
   xor rax, rax                          ; clear rax
   lodsb                                 ; load one byte from hash key
-  ror r12, ror_seed                     ; rotate right the hash value
-  add r12, rax                          ; add the next byte of hash key
+  ror r10, ror_seed                     ; rotate right the hash value
+  add r10, rax                          ; add the next byte of hash key
   loop read_hash_key_0                  ; loop until read hash key finish
-  pop r9                                ; restore stack
+  pop r14                               ; restore stack
 
   ; calculate key hash
-  mov r13, r12                          ; initialize r13 for store key hash
-  push r9                               ; push hash key to stack
+  mov r11, r10                          ; initialize r11 for store key hash
+  push r14                              ; push hash key to stack
   mov rsi, rsp                          ; set address for load string byte
-  mov cl, hash_key_size                 ; set the loop times with hash key
-  read_hash_key_1:                      ;
+  mov cl, key_size                      ; set the loop times with hash key
+ read_hash_key_1:                       ;
   xor rax, rax                          ; clear rax
   lodsb                                 ; load one byte from hash key
-  ror r13, ror_key                      ; rotate right the hash value
-  add r13, rax                          ; add the next byte of hash key
+  ror r11, ror_key                      ; rotate right the hash value
+  add r11, rax                          ; add the next byte of hash key
   loop read_hash_key_1                  ; loop until read hash key finish
-  pop r9                                ; restore stack
+  pop r14                               ; restore stack
 
   ; get the first module
-  mov cl, 96                            ; set offset to rcx
-  mov rbx, [gs:rcx]                     ; get a pointer to the PEB
-  mov rbx, [rbx+24]                     ; get PEB->LDR
-  mov rbx, [rbx+32]                     ; get the first module from the InMemoryOrder module list
+  mov rbx, [gs:0x30]                    ; get a pointer to the TEB
+  mov rbx, [rbx+0x60]                   ; get TEB->PEB
+  mov rbx, [rbx+0x18]                   ; get PEB->LDR
+  mov rbx, [rbx+0x20]                   ; get the first module from the InMemoryOrder module list
   call get_next_module                  ; begin find module and function
 
   ; restore context
-  pop r15                               ; restore r15
   pop r14                               ; restore r14
   pop r13                               ; restore r13
   pop r12                               ; restore r12
-  pop rbx                               ; restore rbx
   pop rsi                               ; restore rsi
+  pop rbp                               ; restore rbp
+  pop rbx                               ; restore rbx
   ret                                   ; return to the caller
 
 get_next_module:
-  mov r14, r12                          ; initialize r14 for store module name hash
+  mov r9, r10                           ; initialize r9 for store module name hash
   mov rsi, [rbx+80]                     ; get pointer to modules name (unicode string)
   test rsi, rsi                         ; check rsi is zero
-  jz not_found_func                     ; if zero get nex module is finish, but not found
+  jz not_found_func                     ; if zero get next module is finish, but not found
   movzx rcx, word [rbx+74]              ; set rcx to the length we want to check
+  sub rcx, 2                            ; set the loop times
 
-  read_module_name:                     ;
+ read_module_name:                      ;
   xor rax, rax                          ; clear rax
   lodsb                                 ; read in the next byte of the name
   cmp al, 'a'                           ; some versions of Windows use lower case module names
   jl uppercase_ok                       ;
   sub al, 0x20                          ; if so normalise to uppercase
   uppercase_ok:                         ;
-  ror r14, ror_mod                      ; rotate right our hash value
-  add r14, rax                          ; add the next byte of the name
+  ror r9, ror_mod                       ; rotate right our hash value
+  add r9, rax                           ; add the next byte of the name
   loop read_module_name                 ; loop until read module name finish
 
   ; proceed to iterate the export address table(EAT)
@@ -136,7 +137,7 @@ get_next_module:
   read_func_name:                       ; and compare it to the one we want
   xor rax, rax                          ; clear rax
   lodsb                                 ; read in the next byte of the ASCII function name
-  ror r15, ror_func                     ; rotate right our hash value
+  ror r15, ror_proc                     ; rotate right our hash value
   add r15, rax                          ; add the next byte of the name
   cmp al, ah                            ; compare AL (the next byte from the name) to AH (null)
   jne read_func_name                    ; if we have not reached the null terminator, continue
