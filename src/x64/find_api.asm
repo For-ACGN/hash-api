@@ -146,13 +146,12 @@ get_next_module:
   xor rax, rax                          ; clear rax
   lodsb                                 ; read in the next byte of the ASCII function name
   test rax, rax                         ; check is null terminator
-  je compare_proc_hash                  ; finish calculate hash
+  je check_proc_hash                    ; finish procedure name hash
   ror r9, ror_proc                      ; rotate right our hash value
   add r9, rax                           ; add the next byte of the name
   jmp read_func_name                    ; if we have not reached the null terminator, continue
 
-  ; check the procedure name hash
- compare_proc_hash:
+ check_proc_hash:
   add r9, r10                           ; add seed hash to procedure name hash
   add r9, r11                           ; add key hash to procedure name hash
   cmp r9, r13                           ; compare the procedure name hash
