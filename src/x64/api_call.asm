@@ -30,7 +30,7 @@ section .data
   args_offset EQU 3*8+8+32              ; stack offset to the original arguments on stack
 
 ; input:  [rcx = module hash], [rdx = procedure hash], [r8 = hash key], [r9 = num api args]
-;         stack: rcx, rdx, r8, r9 and any stack parameters).
+;         stack: rcx, rdx, r8, r9 and any stack parameters.
 ; output: [rax = the return value from the API call].
 api_call:
   ; try to find api address
@@ -64,7 +64,7 @@ api_call:
   mov rcx, [rbp+args_offset+0*8]        ; set rcx from stack
   mov rdx, [rbp+args_offset+1*8]        ; set rdx from stack
   mov r8,  [rbp+args_offset+2*8]        ; set r8 from stack
-  mov r9,  [rbp+args_offset+2*8]        ; set r9 from stack
+  mov r9,  [rbp+args_offset+3*8]        ; set r9 from stack
 
   ; call api function
   sub rsp, 32                           ; reserve stack
