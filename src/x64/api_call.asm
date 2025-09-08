@@ -49,6 +49,14 @@ api_call:
   mov rbp, rsp                          ; create new stack frame
 
   ; calculate the new stack size that need be allocated
+  cmp r9, 4                             ; check the number of the arguments is > 4
+  jg greater_4                          ;
+  xor r9, r9                            ; if <= 4, set to 0
+  jmp next_4                            ;
+  greater_4:                            ;
+  sub r9, 4                             ; if > 4, calculate the overflowed number
+  next_4:                               ;
+
   imul r9, 8                            ; calculate new stack size
   sub rsp, r9                           ; reserve stack
   and rsp, 0xFFFFFFFFFFFFFFF0           ; ensure stack is 16 bytes aligned
@@ -76,7 +84,6 @@ api_call:
   pop rbp                               ; restore rbp
   pop rsi                               ; restore rsi
   pop rdi                               ; restore rdi
-
   not_found_api:                        ;
   ret                                   ; return to the caller
 
