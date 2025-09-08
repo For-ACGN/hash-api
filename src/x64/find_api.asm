@@ -27,6 +27,12 @@ section .data
   ror_mod  EQU ror_bit+3                ; the number of the module name hash ror bit
   ror_proc EQU ror_bit+4                ; the number of the procedure name hash ror bit
 
+; register:
+;   r10 store seed hash
+;   r11 store key hash
+;   r12 store module name hash
+;   r13 store procedure name hash
+
 ; input:  [rcx = module hash], [rdx = procedure hash], [r8 = hash key].
 ; output: [rax = api function address].
 find_api:
@@ -42,11 +48,11 @@ find_api:
 
   ; for calculate seed and key hash
   push r8                               ; push hash key to stack
-  mov rsi, rsp                          ; set address for load string byte
+  xor rcx, rcx                          ; clear rcx
 
   ; calculate seed hash
   mov r10, r8                           ; initialize r10 for store seed hash
-  xor rcx, rcx                          ; clear rcx
+  mov rsi, rsp                          ; set address for load string byte
   mov cl, key_size                      ; set the loop times with hash key
  read_hash_key_0:                       ;
   xor rax, rax                          ; clear rax
@@ -57,6 +63,7 @@ find_api:
 
   ; calculate key hash
   mov r11, r10                          ; initialize r11 for store key hash
+  mov rsi, rsp                          ; set address for load string byte
   mov cl, key_size                      ; set the loop times with hash key
  read_hash_key_1:                       ;
   xor rax, rax                          ; clear rax
@@ -138,12 +145,14 @@ get_next_module:
  read_func_name:                        ; and compare it to the one we want
   xor rax, rax                          ; clear rax
   lodsb                                 ; read in the next byte of the ASCII function name
+  test rax, rax                         ; check is null terminator
+  je compare_proc_hash                  ; finish calculate hash
   ror r9, ror_proc                      ; rotate right our hash value
   add r9, rax                           ; add the next byte of the name
-  cmp al, ah                            ; compare AL (the next byte from the name) to AH (null)
-  jne read_func_name                    ; if we have not reached the null terminator, continue
+  jmp read_func_name                    ; if we have not reached the null terminator, continue
 
   ; check the procedure name hash
+ compare_proc_hash:
   add r9, r10                           ; add seed hash to procedure name hash
   add r9, r11                           ; add key hash to procedure name hash
   cmp r9, r13                           ; compare the procedure name hash
