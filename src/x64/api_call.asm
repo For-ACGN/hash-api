@@ -27,7 +27,7 @@ section .data
   ror_mod  EQU ror_bit+3                ; the number of the module name hash ror bit
   ror_proc EQU ror_bit+4                ; the number of the procedure name hash ror bit
 
-  args_offset EQU (3+1)*8+32            ; stack offset to the original arguments on stack
+  args_offset EQU 3*8+8+32              ; stack offset to the original arguments on stack
 
 ; input:  [rcx = module hash], [rdx = procedure hash], [r8 = hash key], [r9 = num api args]
 ;         stack: rcx, rdx, r8, r9 and any stack parameters).
@@ -55,15 +55,17 @@ api_call:
 
   ; copy arguments to the new stack
   mov rsi, rbp                          ; set source address
-  add rsi, args_offset+3*8              ; add offset to target address
+  add rsi, args_offset+4*8              ; add offset to target address
   mov rdi, rsp                          ; set destination address
-  mov rcx, r8                           ; set num bytes
+  mov rcx, r9                           ; set num bytes
   rep movsb                             ; copy parameters to new stack
+
   ; move arguments about api
-  mov rcx, r9                           ; set rcx from r9
-  mov rdx, [rbp+args_offset+0*8]        ; set rdx from stack
-  mov r8,  [rbp+args_offset+1*8]        ; set r8 from stack
+  mov rcx, [rbp+args_offset+0*8]        ; set rcx from stack
+  mov rdx, [rbp+args_offset+1*8]        ; set rdx from stack
+  mov r8,  [rbp+args_offset+2*8]        ; set r8 from stack
   mov r9,  [rbp+args_offset+2*8]        ; set r9 from stack
+
   ; call api function
   sub rsp, 32                           ; reserve stack
   call rax                              ; call the api address
