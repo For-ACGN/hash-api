@@ -17,23 +17,21 @@
 [BITS 32]
 
 section .data
-  hash_key_size EQU 4                   ; the hash key byte slice length
-
+  key_size EQU 4                        ; the hash key byte slice length
   ror_bit  EQU 4                        ; the number of the base ror bit
   ror_seed EQU ror_bit+1                ; the number of the seed hash ror bit
   ror_key  EQU ror_bit+2                ; the number of the hash key ror bit
   ror_mod  EQU ror_bit+3                ; the number of the module name hash ror bit
-  ror_func EQU ror_bit+4                ; the number of the function name hash ror bit
+  ror_proc EQU ror_bit+4                ; the number of the procedure name hash ror bit
 
-  rsv_stack     EQU (2+4)*4             ; reserve stack size for store arguments and variables
-  arg_func_hash EQU 0*4                 ; the stack offset of the argument function hash
-  arg_hash_key  EQU 1*4                 ; the stack offset of the argument hash key
-  var_seed_hash EQU 2*4                 ; the stack offset of the variable seed hash
-  var_key_hash  EQU 3*4                 ; the stack offset of the variable key hash
-  var_mod_hash  EQU 4*4                 ; the stack offset of the variable module name hash
-  var_func_hash EQU 5*4                 ; the stack offset of the variable function name hash
+  reserve_stack EQU (3+2)*4             ; reserve stack size for store arguments and variables
+  arg_mod_hash  EQU 0*4                 ; the stack offset of the argument module name hash
+  arg_proc_hash EQU 1*4                 ; the stack offset of the argument procedure name hash
+  arg_hash_key  EQU 2*4                 ; the stack offset of the argument hash key
+  var_seed_hash EQU 3*4                 ; the stack offset of the variable seed hash
+  var_key_hash  EQU 4*4                 ; the stack offset of the variable key hash
 
-; [input]  hash and hash key must be pushed onto stack.
+; [input]  [stdcall] module hash, procedure hash and hash key.
 ; [output] [eax = api function address].
 find_api:
   ; store context
@@ -43,25 +41,22 @@ find_api:
   push ebp                              ; store ebp
 
   ; reserve stack for store arguments and variables
-  sub esp, rsv_stack                    ; reserve stack
+  sub esp, reserve_stack                ; reserve stack
   mov ebp, esp                          ; for read arguments and variables easily in function
 
   ; set arguments and variables
-  xor eax, eax                          ; clear eax for clean stack
-  mov ecx, [ebp+rsv_stack+5*4]          ; read hash from stack
-  mov edx, [ebp+rsv_stack+6*4]          ; read hash key from stack
-  mov [ebp+arg_func_hash], ecx          ; store hash to stack
+  mov eax, [ebp+reserve_stack+5*4]      ; read module name hash from stack
+  mov ecx, [ebp+reserve_stack+6*4]      ; read procedure name hash from stack
+  mov edx, [ebp+reserve_stack+7*4]      ; read hash key from stack
+  mov [ebp+arg_mod_hash], eax           ; store module name hash to stack
+  mov [ebp+arg_proc_hash], ecx          ; store procedure name hash to stack
   mov [ebp+arg_hash_key], edx           ; store hash key to stack
-  mov [ebp+var_seed_hash], eax          ; clean stack for store seed hash
-  mov [ebp+var_key_hash], eax           ; clean stack for store key hash
-  mov [ebp+var_mod_hash], eax           ; clean stack for store module name hash
-  mov [ebp+var_func_hash], eax          ; clean stack for store function name hash
 
   ; calculate seed hash
   xor ecx, ecx                          ; clear ecx
   mov edx, [ebp+arg_hash_key]           ; initialize edx for store seed hash
   lea esi, [ebp+arg_hash_key]           ; set address for load string byte
-  mov cl, hash_key_size                 ; set the loop times with hash key
+  mov cl, key_size                      ; set the loop times with hash key
   read_hash_key_0:                      ;
   xor eax, eax                          ; clear eax
   lodsb                                 ; load one byte from hash key
@@ -73,7 +68,7 @@ find_api:
   ; calculate key hash
   mov edx, [ebp+var_seed_hash]          ; initialize edx for store key hash
   lea esi, [ebp+arg_hash_key]           ; set address for load string byte
-  mov cl, hash_key_size                 ; set the loop times with hash key
+  mov cl, key_size                      ; set the loop times with hash key
   read_hash_key_1:                      ;
   xor eax, eax                          ; clear eax
   lodsb                                 ; load one byte from hash key
@@ -83,21 +78,21 @@ find_api:
   mov [ebp+var_key_hash], edx           ; save key hash to stack
 
   ; get the first module
-  mov cl, 48                            ; set offset to ecx
-  mov ebx, [fs:ecx]                     ; get a pointer to the PEB
-  mov ebx, [ebx+12]                     ; get PEB->LDR
-  mov ebx, [ebx+20]                     ; get the first module from the InMemoryOrder module list
+  mov ebx, [fs:0x18]                    ; get a pointer to the TEB
+  mov ebx, [ebx+0x30]                   ; get TEB->PEB
+  mov ebx, [ebx+0x0C]                   ; get PEB->LDR
+  mov ebx, [ebx+0x14]                   ; get the first module from the InMemoryOrder module list
   call get_next_module                  ; begin find module and function
 
   ; restore stack for store arguments and variables
-  add esp, rsv_stack                    ; restore stack
+  add esp, reserve_stack                ; restore stack
 
   ; restore context
   pop ebp                               ; restore ebp
   pop ebx                               ; restore ebx
   pop esi                               ; restore esi
   pop edi                               ; restore edi
-  ret 2*4                               ; return to the caller
+  ret 3*4                               ; return to the caller
 
 get_next_module:
   mov edi, [ebp+var_seed_hash]          ; initialize edi for store module name hash
