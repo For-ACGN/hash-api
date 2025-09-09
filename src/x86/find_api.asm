@@ -57,7 +57,7 @@ find_api:
   mov edx, [ebp+arg_hash_key]           ; initialize edx for store seed hash
   lea esi, [ebp+arg_hash_key]           ; set address for load string byte
   mov cl, key_size                      ; set the loop times with hash key
-  read_hash_key_0:                      ;
+ read_hash_key_0:                       ;
   xor eax, eax                          ; clear eax
   lodsb                                 ; load one byte from hash key
   ror edx, ror_seed                     ; rotate right the hash value
@@ -69,7 +69,7 @@ find_api:
   mov edx, [ebp+var_seed_hash]          ; initialize edx for store key hash
   lea esi, [ebp+arg_hash_key]           ; set address for load string byte
   mov cl, key_size                      ; set the loop times with hash key
-  read_hash_key_1:                      ;
+ read_hash_key_1:                       ;
   xor eax, eax                          ; clear eax
   lodsb                                 ; load one byte from hash key
   ror edx, ror_key                      ; rotate right the hash value
@@ -100,8 +100,9 @@ get_next_module:
   test esi, esi                         ; check esi is zero
   jz not_found_func                     ; if zero get nex module is finish, but not found
   movzx ecx, word [ebx+38]              ; set ecx to the length we want to check
+  sub ecx, 2                            ; set the loop times
 
-  read_module_name:                     ;
+ read_module_name:                      ;
   xor eax, eax                          ; clear eax
   lodsb                                 ; read in the next byte of the name
   cmp al, 'a'                           ; some versions of Windows use lower case module names
@@ -111,14 +112,18 @@ get_next_module:
   ror edi, ror_mod                      ; rotate right our hash value
   add edi, eax                          ; add the next byte of the name
   loop read_module_name                 ; loop until read module name finish
-  mov [ebp+var_mod_hash], edi           ; store module name hash to the stack
+
+  ; check the module name hash
+  add edi, [ebp+var_seed_hash]          ; add seed hash to module name hash
+  add edi, [ebp+var_key_hash]           ; add key hash to module name hash
+  cmp edi, [ebp+arg_mod_hash]           ; compare the module name hash
+  jne get_next_mod_3
 
   ; proceed to iterate the export address table(EAT)
   push ebx                              ; save the current position in the module list for later
   mov ebx, [ebx+16]                     ; get this modules base address
   mov eax, [ebx+60]                     ; get PE header
   add eax, ebx                          ; add the modules base address
-
   mov eax, [eax+120]                    ; get the EAT from the PE header
   test eax, eax                         ; test if no export address table is present
   jz get_next_mod_2                     ; if no EAT present, process the next module
@@ -128,40 +133,39 @@ get_next_module:
   mov edx, [eax+32]                     ; get the RVA of the function names
   add edx, ebx                          ; add the modules base address
 
-get_next_func:                          ; computing the module hash + function hash
+ get_next_func:                         ; computing the module hash + function hash
   jecxz get_next_mod_1                  ; when we reach the start of the EAT, process the next module
   dec ecx                               ; decrement the function name counter
   mov esi, dword [edx+ecx*4]            ; get RVA of next module name
   add esi, ebx                          ; add the modules base address
   mov edi, [ebp+var_seed_hash]          ; initialize edi for store function name hash
 
-  read_func_name:                       ; and compare it to the one we want
+ read_func_name:                       ; and compare it to the one we want
   xor eax, eax                          ; clear eax
   lodsb                                 ; read in the next byte of the ASCII function name
-  ror edi, ror_func                     ; rotate right our hash value
+  test eax, eax                         ; check is null terminator
+  je check_proc_hash                    ; finish procedure name hash
+  ror edi, ror_proc                     ; rotate right our hash value
   add edi, eax                          ; add the next byte of the name
   cmp al, ah                            ; compare AL (the next byte from the name) to AH (null)
   jne read_func_name                    ; if we have not reached the null terminator, continue
-  mov [ebp+var_func_hash], edi          ; store function name hash to the stack
 
-  ; calculate the finally hash
-  xor edi, edi                          ; clear edi for store the finally hash
-  add edi, [ebp+var_seed_hash]          ; add the seed hash to edi
-  add edi, [ebp+var_key_hash]           ; add the key hash to edi
-  add edi, [ebp+var_mod_hash]           ; add the current module hash to edi
-  add edi, [ebp+var_func_hash]          ; add the current function hash to edi
-  cmp edi, [ebp+arg_func_hash]          ; compare the hash to the one we are searching for
-  jnz get_next_func                     ; go compute the next function hash if we have not found it
+ check_proc_hash:
+  add edi, [ebp+var_seed_hash]          ; add seed hash to procedure name hash
+  add edi, [ebp+var_key_hash]           ; add key hash to procedure name hash
+  cmp edi, [ebp+arg_proc_hash]          ; compare the procedure name hash
+  jne get_next_func                     ; go compute the next function hash if we have not found it
   jmp found_func                        ; if found, fix up stack, return the function address
 
-  get_next_mod_1:                       ;
+ get_next_mod_1:                        ;
   pop eax                               ; pop off the current (now the previous) modules EAT
-  get_next_mod_2:                       ;
+ get_next_mod_2:                        ;
   pop ebx                               ; restore our position in the module list
+ get_next_mod_3:                        ;
   mov ebx, [ebx]                        ; get the next module
   jmp get_next_module                   ; process the next module
 
-  found_func:                           ;
+ found_func:                            ;
   pop eax                               ; restore the current modules EAT
   mov edx, dword [eax+36]               ; get the ordinal table RVA
   add edx, ebx                          ; add the modules base address
@@ -172,6 +176,6 @@ get_next_func:                          ; computing the module hash + function h
   add eax, ebx                          ; add the modules base address to get the functions actual VA
   pop edx                               ; clear off the current position in the module list
   ret                                   ; return to the caller
-  not_found_func:                       ;
+ not_found_func:                        ;
   xor eax, eax                          ; clear the eax and it is the return value
   ret                                   ; return to the caller
