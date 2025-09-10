@@ -7,7 +7,8 @@ entry:
   push 123                              ; push fake argument
   push 2                                ; push num arguments
   push 0xABCD1234                       ; push hash key
-  push 0xABCD1234                       ; push function hash
+  push 0xABCD1234                       ; push procedure name hash
+  push 0xABCD1234                       ; push module name hash
   call api_call                         ; call api function
   test eax, eax                         ; check return value is zero
   jz not_found                          ;
