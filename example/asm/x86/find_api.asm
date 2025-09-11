@@ -14,9 +14,9 @@ entry:
 
   ; find "kernel32.dll, WinExec"
   cld                                   ; clear the direction flag
-  push 0x4D5AF344                       ; set module name hash
+  push 0x4D5AF344                       ; set hash key
   push 0xFB16D6BD                       ; set procedure name hash
-  push 0x21F98D89                       ; set hash key
+  push 0x21F98D89                       ; set module name hash
   call find_api                         ; try to find api address
   test eax, eax                         ; check target function is found
   jz not_found                          ;
