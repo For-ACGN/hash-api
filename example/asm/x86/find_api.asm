@@ -23,7 +23,7 @@ entry:
 
   ; call "kernel32.dll, WinExec"
   lea ecx, [ebx+command]                ; lpCmdLine
-  xor edx, edx                          ; clear ecx
+  xor edx, edx                          ; clear edx
   mov dl, [ebx+cmd_show]                ; set uCmdShow
   push edx                              ; push uCmdShow
   push ecx                              ; push lpCmdLine
