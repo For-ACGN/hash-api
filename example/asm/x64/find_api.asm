@@ -22,7 +22,7 @@ entry:
   jz not_found                          ;
 
   ; call "kernel32.dll, WinExec"
-  lea rcx, [rbx+command]                ; lpCmdLine
+  lea rcx, [rbx+cmd_line]               ; lpCmdLine
   xor rdx, rdx                          ; clear rdx
   mov dl, [rbx+cmd_show]                ; uCmdShow
   sub rsp, 32                           ; reserve stack
@@ -46,7 +46,7 @@ calc_entry_addr:
 hash_api:
   %include "src/x64/find_api.asm"
 
-command:
+cmd_line:
   db "calc.exe", 0
 
 cmd_show:

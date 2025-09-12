@@ -75,7 +75,7 @@ win_exec:
   mov r8,  0xCAF4D6F05577E596           ; set hash key
   mov r9,  2                            ; set num arguments
 
-  lea r10, [rbx+command]                ; lpCmdLine
+  lea r10, [rbx+cmd_line]               ; lpCmdLine
   mov [rsp+0], r10                      ; move argument to stack
   xor r10, r10                          ; clear r10
   mov r10b, [rbx+cmd_show]              ; uCmdShow
@@ -95,7 +95,7 @@ win_exec:
 hash_api:
   %include "src/x64/api_call.asm"
 
-command:
+cmd_line:
   db "calc.exe", 0
 
 cmd_show:

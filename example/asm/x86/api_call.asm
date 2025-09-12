@@ -51,7 +51,7 @@ win_exec:
   cld                                   ; clear the direction flag
 
   ; call "kernel32.dll, WinExec"
-  lea ecx, [ebx+command]                ; lpCmdLine
+  lea ecx, [ebx+cmd_line]               ; lpCmdLine
   xor edx, edx                          ; clear edx
   mov dl, [ebx+cmd_show]                ; set uCmdShow
   push edx                              ; push uCmdShow
@@ -69,7 +69,7 @@ win_exec:
 hash_api:
   %include "src/x86/api_call.asm"
 
-command:
+cmd_line:
   db "calc.exe", 0
 
 cmd_show:
