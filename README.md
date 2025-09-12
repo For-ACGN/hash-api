@@ -16,17 +16,27 @@ entry:
   call calc_entry_addr                  ; calculate the entry address
   flag_CEA:                             ; flag for calculate entry address
 
+  ; reserve stack for arguments
+  sub rsp, 2*8
+
   ; call "kernel32.dll, WinExec"
-  mov rcx, 0xCA2DBA870B222A04           ; set function hash
-  mov rdx, 0xB725F01C80CE0985           ; set hash key
-  mov r8, 2                             ; set num arguments
-  lea r9, [rbx+command]                 ; lpCmdLine
+  mov rcx, 0x9BAC085EFA4FDFAE           ; set module name hash
+  mov rdx, 0x221840B185A6EC3D           ; set procedure name hash
+  mov r8,  0xCAF4D6F05577E596           ; set hash key
+  mov r9,  2                            ; set num arguments
+
+  lea r10, [rbx+cmd_line]               ; lpCmdLine
+  mov [rsp+0], r10                      ; move argument to stack
   xor r10, r10                          ; clear r10
   mov r10b, [rbx+cmd_show]              ; uCmdShow
-  sub rsp, 32+1*8                       ; reserve stack
-  mov [rsp+32+0*8], r10                 ; uCmdShow
+  mov [rsp+8], r10                      ; move argument to stack
+
+  sub rsp, 32                           ; reserve stack
   call api_call                         ; call api function
-  add rsp, 32+1*8                       ; restore stack
+  add rsp, 32                           ; restore stack
+
+  ; restore stack for arguments
+  add rsp, 2*8
 
   ; restore context
   pop rbx                               ; restore rbx
@@ -42,7 +52,7 @@ calc_entry_addr:
 hash_api:
   %include "src/x64/api_call.asm"
 
-command:
+cmd_line:
   db "calc.exe", 0
 
 cmd_show:
@@ -64,14 +74,15 @@ entry:
   flag_CEA:                             ; flag for calculate entry address
 
   ; call "kernel32.dll, WinExec"
-  lea edx, [ebx+command]                ; lpCmdLine
-  xor ecx, ecx                          ; clear ecx
-  mov cl, [ebx+cmd_show]                ; set uCmdShow
-  push ecx                              ; push uCmdShow
-  push edx                              ; push lpCmdLine
+  lea ecx, [ebx+cmd_line]               ; lpCmdLine
+  xor edx, edx                          ; clear edx
+  mov dl, [ebx+cmd_show]                ; set uCmdShow
+  push edx                              ; push uCmdShow
+  push ecx                              ; push lpCmdLine
   push 2                                ; set num arguments
-  push 0x61DA2999                       ; set hash key
-  push 0x0AE20914                       ; set function hash
+  push 0x4D5AF344                       ; set hash key
+  push 0xFB16D6BD                       ; set procedure name hash
+  push 0x21F98D89                       ; set module name hash
   call api_call                         ; call api function
 
   ; restore context
@@ -88,7 +99,7 @@ calc_entry_addr:
 hash_api:
   %include "src/x86/api_call.asm"
 
-command:
+cmd_line:
   db "calc.exe", 0
 
 cmd_show:
