@@ -1,5 +1,11 @@
 # hash-api
-Find&amp;Call Windows API by hash+key.
+Find and call Windows API by module and procedure name hash with random key.
+
+## Purpose
+* add random key ensure that same "module + procedure" have different hash.
+* replace "jmp win_api" to "call win_api" in api_call
+* avoid accessing the memory address where the decoy DLL is located.
+* provide method find_api to search for API instead of calling them directly.
 
 ## Example
 ### x64
